@@ -57,11 +57,11 @@ When you start the game, you'll be prompted to configure:
 
 ## Board Symbols
 
-- 🚩 **Flag**: Marked as potential bomb
-- ⬜ **Hidden**: Unrevealed cell
-- ⬛ **Empty**: Revealed cell with no adjacent bombs
+- **F** **Flag**: Marked as potential bomb
+- **.** **Hidden**: Unrevealed cell
+- **(space)** **Empty**: Revealed cell with no adjacent bombs
 - **1-8**: Number of adjacent bombs
-- 💣 **Bomb**: Revealed bomb (game over)
+- **\*** **Bomb**: Revealed bomb (game over)
 
 ## Game Rules
 

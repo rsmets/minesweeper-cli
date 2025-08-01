@@ -196,9 +196,8 @@ export class MinesweeperCLI {
     // Print column headers
     process.stdout.write("   ");
     for (let col = 0; col < config.width; col++) {
-      process.stdout.write(
-        ` ${String.fromCharCode("A".charCodeAt(0) + col)}  `
-      );
+      const colLetter = String.fromCharCode("A".charCodeAt(0) + col);
+      process.stdout.write(` ${colLetter} `);
     }
     console.log();
 
@@ -211,20 +210,20 @@ export class MinesweeperCLI {
         let symbol = "";
 
         if (cell.state === CellState.FLAGGED) {
-          symbol = "🚩";
+          symbol = " F ";
         } else if (cell.state === CellState.HIDDEN) {
-          symbol = "⬜";
+          symbol = " . ";
         } else if (cell.state === CellState.REVEALED) {
           if (cell.isBomb) {
-            symbol = "💣";
+            symbol = " * ";
           } else if (cell.adjacentBombs === 0) {
-            symbol = "⬛";
+            symbol = "   ";
           } else {
             symbol = ` ${cell.adjacentBombs} `;
           }
         }
 
-        process.stdout.write(symbol.padEnd(3));
+        process.stdout.write(symbol);
       }
       console.log();
     }
