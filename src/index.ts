@@ -5,12 +5,12 @@ import { MinesweeperCLI } from "./cli";
 /**
  * Main entry point for the Minesweeper CLI game
  */
-function main(): void {
+async function main(): Promise<void> {
   try {
     const cli = new MinesweeperCLI();
-    cli.start();
+    await cli.start();
   } catch (error) {
-    console.error("❌ An error occurred:", error);
+    console.error(" An error occurred:", error);
     process.exit(1);
   }
 }
