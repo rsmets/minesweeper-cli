@@ -1,14 +1,14 @@
-import * as readline from "readline/promises";
+import { Interface, createInterface } from "readline/promises";
 import { stdin as input, stdout as output } from "process";
 import { MinesweeperGame } from "./game";
 import { GameConfig, Position, CellState, GameStatus } from "./types";
 
 export class MinesweeperCLI {
   private game: MinesweeperGame | null = null;
-  private rl: readline.Interface;
+  private rl: Interface;
 
   constructor() {
-    this.rl = readline.createInterface({ input, output });
+    this.rl = createInterface({ input, output });
   }
 
   /**
