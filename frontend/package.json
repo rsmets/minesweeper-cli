@@ -1,0 +1,17 @@
+{
+  "name": "minesweeper-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "svelte": "^4.2.8"
+  },
+  "devDependencies": {
+    "vite": "^5.2.8",
+    "@sveltejs/vite-plugin-svelte": "^6.1.0"
+  }
+}
