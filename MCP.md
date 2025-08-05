@@ -305,11 +305,6 @@ Potential improvements for the MCP integration:
 3. Ensure client is connecting to correct URL (note the `/sse` suffix)
 4. Check server logs for "MCP plugin registered" message
 
-**CORS/Connection issues:**
-- Set `NODE_ENV=development` for local testing to allow all origins
-- In production, only Claude and Cursor domains are whitelisted
-- Check browser console for CORS errors if using web-based MCP clients
-
 **Server won't start:**
 - Port conflict: Change port with `PORT=8081 pnpm run dev:server`
 - Dependencies: Run `pnpm install` to ensure all packages are installed
