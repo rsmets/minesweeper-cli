@@ -20,7 +20,7 @@
     "start:server": "node --env-file=.env dist/server.js",
     "test": "tsc && node --test dist/tests/**/*.test.js",
     "test:watch": "tsc && node --test --watch dist/tests/**/*.test.js",
-    "test:dev": "tsx tests/**/*.test.ts",
+    "test:dev": "tsx tests/game.test.ts tests/types.test.ts",
     "postbuild": "echo 'Build completed'"
   },
   "keywords": [

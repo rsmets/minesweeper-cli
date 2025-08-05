@@ -1,4 +1,4 @@
-import Fastify from "fastify";
+import Fastify, { FastifyRequest, FastifyReply } from "fastify";
 import fastifyStatic from "@fastify/static";
 import path from "path";
 import { MinesweeperGame } from "./game";
@@ -14,7 +14,7 @@ const fastify = Fastify({ logger: true });
 const games: Record<string, MinesweeperGame> = {};
 
 // Serve index.html at root - inline HTML to avoid file path issues
-fastify.get("/", async (req, reply) => {
+fastify.get("/", async (req: FastifyRequest, reply: FastifyReply) => {
   reply.type("text/html").send(`
 <!DOCTYPE html>
 <html lang="en">
@@ -224,7 +224,7 @@ fastify.get("/", async (req, reply) => {
 });
 
 // Health check - robust for Fly.io
-fastify.get("/api/health", async (req, reply) => {
+fastify.get("/api/health", async (req: FastifyRequest, reply: FastifyReply) => {
   try {
     reply.status(200).send({
       status: "ok",
@@ -241,93 +241,108 @@ fastify.get("/api/health", async (req, reply) => {
 });
 
 // Additional health check routes for Fly.io compatibility
-fastify.get("/health", async (req, reply) => {
+fastify.get("/health", async (req: FastifyRequest, reply: FastifyReply) => {
   reply.status(200).send({ status: "healthy" });
 });
 
-fastify.get("/healthz", async (req, reply) => {
+fastify.get("/healthz", async (req: FastifyRequest, reply: FastifyReply) => {
   reply.status(200).send({ status: "ok" });
 });
 
 // Debug route for deployment troubleshooting
-fastify.get("/api/debug", async (_req, _reply) => {
-  const fs = require("fs");
-  const staticPath = path.join(__dirname, "../frontend/dist");
-  const indexPath = path.join(staticPath, "index.html");
+fastify.get(
+  "/api/debug",
+  async (_req: FastifyRequest, _reply: FastifyReply) => {
+    const fs = require("fs");
+    const staticPath = path.join(__dirname, "../frontend/dist");
+    const indexPath = path.join(staticPath, "index.html");
 
-  return {
-    status: "debug",
-    __dirname,
-    staticPath,
-    indexPath,
-    indexExists: fs.existsSync(indexPath),
-    staticDirExists: fs.existsSync(staticPath),
-    staticDirContents: fs.existsSync(staticPath)
-      ? fs.readdirSync(staticPath)
-      : [],
-    cwd: process.cwd(),
-    env: {
-      PORT: process.env.PORT,
-      NODE_ENV: process.env.NODE_ENV,
-    },
-  };
-});
+    return {
+      status: "debug",
+      __dirname,
+      staticPath,
+      indexPath,
+      indexExists: fs.existsSync(indexPath),
+      staticDirExists: fs.existsSync(staticPath),
+      staticDirContents: fs.existsSync(staticPath)
+        ? fs.readdirSync(staticPath)
+        : [],
+      cwd: process.cwd(),
+      env: {
+        PORT: process.env.PORT,
+        NODE_ENV: process.env.NODE_ENV,
+      },
+    };
+  },
+);
 
 // Create new game
-fastify.post<{ Body: GameConfig }>("/api/game", async (req, reply) => {
-  const config = req.body;
+fastify.post<{ Body: GameConfig }>(
+  "/api/game",
+  async (req: FastifyRequest<{ Body: GameConfig }>, reply: FastifyReply) => {
+    const config = req.body;
 
-  // Validate configuration
-  const errors: string[] = [];
+    // Validate configuration
+    const errors: string[] = [];
 
-  if (!config.width || config.width < 3 || config.width > 50) {
-    errors.push("Width must be between 3 and 50");
-  }
+    if (!config.width || config.width < 3 || config.width > 50) {
+      errors.push("Width must be between 3 and 50");
+    }
 
-  if (!config.height || config.height < 3 || config.height > 50) {
-    errors.push("Height must be between 3 and 50");
-  }
+    if (!config.height || config.height < 3 || config.height > 50) {
+      errors.push("Height must be between 3 and 50");
+    }
 
-  if (
-    !config.bombPercentage ||
-    config.bombPercentage < 5 ||
-    config.bombPercentage > 40
-  ) {
-    errors.push("Bomb percentage must be between 5% and 40%");
-  }
+    if (
+      !config.bombPercentage ||
+      config.bombPercentage < 5 ||
+      config.bombPercentage > 40
+    ) {
+      errors.push("Bomb percentage must be between 5% and 40%");
+    }
 
-  if (errors.length > 0) {
-    return reply.code(400).send({
-      error: "Invalid configuration",
-      details: errors,
-      validRanges: {
-        width: "3-50",
-        height: "3-50",
-        bombPercentage: "5-40",
-      },
-    });
-  }
+    if (errors.length > 0) {
+      return reply.code(400).send({
+        error: "Invalid configuration",
+        details: errors,
+        validRanges: {
+          width: "3-50",
+          height: "3-50",
+          bombPercentage: "5-40",
+        },
+      });
+    }
 
-  const id = randomUUID();
-  games[id] = new MinesweeperGame(config);
-  reply.code(201).send({ id });
-});
+    const id = randomUUID();
+    games[id] = new MinesweeperGame(config);
+    reply.code(201).send({ id });
+  },
+);
 
 // Get game state
-fastify.get<{ Params: { id: string } }>("/api/game/:id", async (req, reply) => {
-  const game = games[req.params.id];
-  if (!game) return reply.code(404).send({ error: "Game not found" });
-  reply.send({
-    id: req.params.id,
-    config: game.getConfig(),
-    state: game.getGameState(),
-  });
-});
+fastify.get<{ Params: { id: string } }>(
+  "/api/game/:id",
+  async (
+    req: FastifyRequest<{ Params: { id: string } }>,
+    reply: FastifyReply,
+  ) => {
+    const game = games[req.params.id];
+    if (!game) return reply.code(404).send({ error: "Game not found" });
+    reply.send({
+      id: req.params.id,
+      config: game.getConfig(),
+      state: game.getGameState(),
+    });
+  },
+);
 
 // Reveal cell
 fastify.post<{ Params: { id: string }; Body: Position }>(
   "/api/game/:id/reveal",
-  async (req, reply) => {
+  async (
+    req: FastifyRequest<{ Params: { id: string }; Body: Position }>,
+    reply: FastifyReply,
+  ) => {
     const game = games[req.params.id];
     if (!game) return reply.code(404).send({ error: "Game not found" });
 
@@ -364,7 +379,10 @@ fastify.post<{ Params: { id: string }; Body: Position }>(
 // Toggle flag
 fastify.post<{ Params: { id: string }; Body: Position }>(
   "/api/game/:id/flag",
-  async (req, reply) => {
+  async (
+    req: FastifyRequest<{ Params: { id: string }; Body: Position }>,
+    reply: FastifyReply,
+  ) => {
     const game = games[req.params.id];
     if (!game) return reply.code(404).send({ error: "Game not found" });
 
@@ -399,14 +417,17 @@ fastify.post<{ Params: { id: string }; Body: Position }>(
 );
 
 // List all active games (IDs only)
-fastify.get("/api/games", async (_req, reply) => {
+fastify.get("/api/games", async (_req: FastifyRequest, reply: FastifyReply) => {
   reply.send({ ids: Object.keys(games) });
 });
 
 // CLI-style command endpoint: accepts commands like 'A1', 'F B2', 'Q', etc.
 fastify.post<{ Params: { id: string }; Body: { command: string } }>(
   "/api/game/:id/command",
-  async (req, reply) => {
+  async (
+    req: FastifyRequest<{ Params: { id: string }; Body: { command: string } }>,
+    reply: FastifyReply,
+  ) => {
     const game = games[req.params.id];
     if (!game) return reply.code(404).send({ error: "Game not found" });
 
@@ -470,10 +491,13 @@ fastify.post<{ Params: { id: string }; Body: { command: string } }>(
 
 const port = process.env.PORT || 8080;
 
-fastify.listen({ port: Number(port), host: "0.0.0.0" }, (err, address) => {
-  if (err) {
-    fastify.log.error(err);
-    process.exit(1);
-  }
-  fastify.log.info(`Server listening at ${address}`);
-});
+fastify.listen(
+  { port: Number(port), host: "0.0.0.0" },
+  (err: Error | null, address: string) => {
+    if (err) {
+      fastify.log.error(err);
+      process.exit(1);
+    }
+    fastify.log.info(`Server listening at ${address}`);
+  },
+);

@@ -34,12 +34,13 @@ describe("Types and Enums", () => {
   describe("GameStatus Enum", () => {
     test("should have correct enum values", () => {
       assert.strictEqual(GameStatus.PLAYING, "PLAYING");
+      assert.strictEqual(GameStatus.QUIT, "QUIT");
       assert.strictEqual(GameStatus.WON, "WON");
       assert.strictEqual(GameStatus.LOST, "LOST");
     });
 
     test("should have all expected enum members", () => {
-      const expectedValues = ["PLAYING", "WON", "LOST"];
+      const expectedValues = ["PLAYING", "QUIT", "WON", "LOST"];
       const actualValues = Object.values(GameStatus);
 
       assert.strictEqual(actualValues.length, expectedValues.length);
@@ -440,6 +441,7 @@ describe("Types and Enums", () => {
       // Simulate game status transitions
       const statusTransitions: GameStatus[] = [
         GameStatus.PLAYING,
+        GameStatus.QUIT,
         GameStatus.WON,
         GameStatus.LOST,
       ];
