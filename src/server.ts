@@ -319,6 +319,12 @@ fastify.get("/mcp", async (req: FastifyRequest, reply: FastifyReply) => {
 
             <div class="endpoint">
                 <span class="method post">POST</span>
+                <span class="path">/api/game/:id/quit</span>
+                <div class="description">End the current game session gracefully</div>
+            </div>
+
+            <div class="endpoint">
+                <span class="method post">POST</span>
                 <span class="path">/api/game/:id/command</span>
                 <div class="description">Execute text commands like "reveal 3 4" or "flag 2 5"</div>
             </div>
@@ -338,6 +344,7 @@ fastify.get("/mcp", async (req: FastifyRequest, reply: FastifyReply) => {
                 <li>"Reveal the cell at row 5, column 3"</li>
                 <li>"Flag the suspicious cell at position (2, 7)"</li>
                 <li>"Show me the current game state"</li>
+                <li>"Quit the current game"</li>
                 <li>"What's my current score?"</li>
             </ul>
         </div>

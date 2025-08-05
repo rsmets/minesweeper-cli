@@ -332,6 +332,40 @@ const routesPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       });
     },
   );
+
+  // Quit game endpoint
+  fastify.post<{ Params: { id: string } }>(
+    "/api/game/:id/quit",
+    {
+      schema: routeSchemas.quitGame,
+    },
+    async (
+      req: FastifyRequest<{ Params: { id: string } }>,
+      reply: FastifyReply,
+    ) => {
+      const game = games[req.params.id];
+      if (!game) return reply.code(404).send({ error: "Game not found" });
+
+      const gameState = game.getGameState();
+
+      reply.send({
+        message: "Game ended by user",
+        gameState: {
+          id: req.params.id,
+          config: game.getConfig(),
+          status: "QUIT",
+          board: renderBoardText(game.getConfig(), gameState),
+          flags: gameState.grid
+            .flat()
+            .filter((cell) => cell.state === CellState.FLAGGED).length,
+          remainingCells: gameState.totalSafeCells - gameState.revealedCells,
+        },
+      });
+
+      // Remove the game from memory after quitting
+      delete games[req.params.id];
+    },
+  );
 };
 
 export default routesPlugin;
