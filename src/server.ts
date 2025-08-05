@@ -5,6 +5,7 @@ import routesPlugin from "./routes";
 import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
 import cors from "@fastify/cors";
+import staticFiles from "@fastify/static";
 
 // Use require for the MCP plugin to work around module resolution issues
 const mcpPlugin = require("@mcp-it/fastify");
@@ -350,6 +351,15 @@ fastify.get("/mcp", async (req: FastifyRequest, reply: FastifyReply) => {
         </div>
 
         <div class="api-section">
+            <h2>🎮 GIF Demo</h2>
+            <p>See the Minesweeper MCP tools in action:</p>
+            <div style="text-align: center; margin: 20px 0;">
+                <img src="/static/sweeper.gif" alt="Minesweeper MCP Demo"
+                     style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+            </div>
+        </div>
+
+        <div class="api-section">
             <h2>🤖 AI Assistant Examples</h2>
             <p>Once connected via MCP, you can use natural language:</p>
             <ul>
@@ -450,6 +460,12 @@ async function startServer() {
     });
 
     // Register the MCP plugin before routes
+    // Register static files
+    await fastify.register(staticFiles, {
+      root: join(__dirname, "static"),
+      prefix: "/static/",
+    });
+
     await fastify.register(mcpPlugin, {
       name: "Minesweeper Game Server",
       description:

@@ -2,6 +2,12 @@
 
 This document explains how the Minesweeper API has been enhanced with Model Context Protocol (MCP) support using the `@mcp-it/fastify` package.
 
+## Demo
+
+![Minesweeper Demo](./assets/sweeper.gif)
+
+*AI assistant playing Minesweeper through MCP integration - natural language commands control the game*
+
 ## What is MCP?
 
 The Model Context Protocol (MCP) is an open standard that enables AI applications to securely connect to data sources and tools. It allows language models to interact with external systems in a standardized way.

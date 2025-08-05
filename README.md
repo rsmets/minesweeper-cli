@@ -291,6 +291,12 @@ curl -H "X-Admin-Key: minesweeper-admin-key" http://localhost:8080/api/games
 
 This server supports the Model Context Protocol, allowing AI assistants to interact with the Minesweeper game using natural language. All API endpoints are automatically exposed as MCP tools.
 
+### Demo
+
+![Minesweeper MCP Demo](./assets/sweeper.gif)
+
+*Watch an AI assistant play Minesweeper using natural language through MCP integration*
+
 ### Quick Setup
 
 1. **Start the server**: `pnpm run dev:server`
