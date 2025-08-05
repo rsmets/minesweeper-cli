@@ -1,9 +1,13 @@
 import Fastify, { FastifyRequest, FastifyReply } from "fastify";
 import { readFileSync } from "fs";
 import { join } from "path";
+import routesPlugin from "./routes";
+import swagger from "@fastify/swagger";
+import swaggerUI from "@fastify/swagger-ui";
+import cors from "@fastify/cors";
+
 // Use require for the MCP plugin to work around module resolution issues
 const mcpPlugin = require("@mcp-it/fastify");
-import routesPlugin from "./routes";
 
 const fastify = Fastify({ logger: true });
 
@@ -381,7 +385,61 @@ fastify.get("/mcp", async (req: FastifyRequest, reply: FastifyReply) => {
 
 async function startServer() {
   try {
-    // Register the MCP plugin FIRST
+    // Enable CORS for MCP SSE connections
+    await fastify.register(cors, {
+      // Allow requests from any origin
+      // Not great for production but this is a dummy app and I want to allow any MCP client to connect
+      origin: true,
+
+      // Allow credentials (cookies, authorization headers) to be sent
+      // Required for MCP authentication and session management
+      credentials: true,
+
+      // Allow specific headers that MCP clients might send
+      allowedHeaders: ["Content-Type", "Authorization", "X-Admin-Key"],
+
+      // Specify which HTTP methods are allowed for CORS requests
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    });
+
+    // Register swagger
+    await fastify.register(swagger, {
+      swagger: {
+        info: {
+          title: "Minesweeper API",
+          description: "A simple Minesweeper API with CRUD operations",
+          version: VERSION,
+        },
+        tags: [
+          { name: "game", description: "Game related endpoints" },
+          { name: "health", description: "Health check endpoints" },
+          { name: "admin", description: "Admin only endpoints" },
+        ],
+        securityDefinitions: {
+          adminKey: {
+            type: "apiKey",
+            name: "X-Admin-Key",
+            in: "header",
+            description: "Admin key for protected endpoints",
+          },
+        },
+      },
+    });
+
+    await fastify.register(swaggerUI, {
+      routePrefix: "/documentation",
+      uiConfig: {
+        docExpansion: "list",
+        deepLinking: false,
+      },
+    });
+
+    // Add hook to generate swagger documentation when the server starts
+    fastify.ready(() => {
+      fastify.swagger();
+    });
+
+    // Register the MCP plugin before routes
     await fastify.register(mcpPlugin, {
       name: "Minesweeper Game Server",
       description:
@@ -390,7 +448,7 @@ async function startServer() {
       addDebugEndpoint: true,
     });
 
-    // Register routes AFTER MCP plugin
+    // Register routes after MCP plugin so routes are made into tools
     await fastify.register(routesPlugin);
 
     const address = await fastify.listen({
