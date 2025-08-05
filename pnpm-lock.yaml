@@ -7,13 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      '@types/readline-sync':
-        specifier: ^1.4.4
-        version: 1.4.8
-      readline-sync:
-        specifier: ^1.4.10
-        version: 1.4.10
     devDependencies:
       '@types/node':
         specifier: ^24.1.0
@@ -186,9 +179,6 @@ packages:
   '@types/node@24.2.0':
     resolution: {integrity: sha512-3xyG3pMCq3oYCNg7/ZP+E1ooTaGB4cG8JWRsqqOYQdbWNY4zbaV0Ennrd7stjiJEFZCaybcIgpTjJWHRfBSIDw==}
 
-  '@types/readline-sync@1.4.8':
-    resolution: {integrity: sha512-BL7xOf0yKLA6baAX6MMOnYkoflUyj/c7y3pqMRfU0va7XlwHAOTOIo4x55P/qLfMsuaYdJJKubToLqRVmRtRZA==}
-
   esbuild@0.25.8:
     resolution: {integrity: sha512-vVC0USHGtMi8+R4Kz8rt6JhEWLxsv9Rnu/lGYbPR8u47B+DCBksq9JarW0zOO7bs37hyOK1l2/oqtbciutL5+Q==}
     engines: {node: '>=18'}
@@ -201,10 +191,6 @@ packages:
 
   get-tsconfig@4.10.1:
     resolution: {integrity: sha512-auHyJ4AgMz7vgS8Hp3N6HXSmlMdUyhSUrfBF16w153rxtLIEOE+HGqaBppczZvnHLqQJfiHotCYpNhl0lUROFQ==}
-
-  readline-sync@1.4.10:
-    resolution: {integrity: sha512-gNva8/6UAe8QYepIQH/jQ2qn91Qj0B9sYjMBBs3QOB8F2CXcKgLxQaJRP76sWVRQt+QU+8fAkCbCvjjMFu7Ycw==}
-    engines: {node: '>= 0.8.0'}
 
   resolve-pkg-maps@1.0.0:
     resolution: {integrity: sha512-seS2Tj26TBVOC2NIc2rOe2y2ZO7efxITtLZcGSOnHHNOQ7CkiUBfw0Iw2ck6xkIhPwLhKNLS8BO+hEpngQlqzw==}
@@ -306,8 +292,6 @@ snapshots:
     dependencies:
       undici-types: 7.10.0
 
-  '@types/readline-sync@1.4.8': {}
-
   esbuild@0.25.8:
     optionalDependencies:
       '@esbuild/aix-ppc64': 0.25.8
@@ -343,8 +327,6 @@ snapshots:
   get-tsconfig@4.10.1:
     dependencies:
       resolve-pkg-maps: 1.0.0
-
-  readline-sync@1.4.10: {}
 
   resolve-pkg-maps@1.0.0: {}
 
