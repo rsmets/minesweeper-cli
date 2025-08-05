@@ -8,10 +8,10 @@ import { mainLogger } from "./logger";
  */
 async function main(): Promise<void> {
   try {
-    mainLogger.debug('Starting Minesweeper CLI application');
+    mainLogger.debug("Starting Minesweeper CLI application");
     const cli = new MinesweeperCLI();
     await cli.start();
-    mainLogger.debug('Minesweeper CLI application finished');
+    mainLogger.debug("Minesweeper CLI application finished");
   } catch (error) {
     console.error(" An error occurred:", error);
     process.exit(1);
@@ -19,6 +19,7 @@ async function main(): Promise<void> {
 }
 
 // Run the application if this file is executed directly
+// CommonJS-compatible entrypoint check
 if (require.main === module) {
   main();
 }
