@@ -1,6 +1,6 @@
 # API Authorization
 
-The `/api/games` endpoint requires API key authentication to list all active game sessions.
+The `/api/games` endpoint requires API key authentication to list all active game sessions. This is implemented using Fastify's preHandler hooks for clean middleware-style authentication.
 
 ## Environment Variables
 
@@ -49,6 +49,35 @@ curl -H "Authorization: minesweeper-admin-key" http://localhost:8080/api/games
 }
 ```
 
+## Implementation Details
+
+This authorization is implemented using Fastify's `preHandler` hooks, which is the idiomatic way to handle middleware in Fastify:
+
+```javascript
+fastify.get(
+  "/api/games",
+  {
+    preHandler: requireAdminKey,
+  },
+  async (req, reply) => {
+    // Handler code here
+  },
+);
+```
+
+Alternative plugin approach for reusable authentication across multiple routes:
+
+```javascript
+const adminAuthPlugin = async (fastify) => {
+  fastify.addHook("preHandler", async (req, reply) => {
+    // Authentication logic here
+  });
+};
+
+// Usage:
+fastify.register(adminAuthPlugin, { prefix: "/admin" });
+```
+
 ## Security Notes
 
 - The API key is case-sensitive
@@ -56,6 +85,7 @@ curl -H "Authorization: minesweeper-admin-key" http://localhost:8080/api/games
 - The default API key should be changed in production environments
 - Consider using environment variables or secure configuration management for API keys
 - The `/api/games` endpoint is the only protected endpoint - game creation and gameplay endpoints remain public
+- Uses Fastify's built-in hook system for proper request lifecycle management
 
 ## Testing Authorization
 

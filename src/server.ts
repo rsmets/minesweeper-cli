@@ -13,7 +13,8 @@ const fastify = Fastify({ logger: true });
 // Authorization middleware
 const API_KEY = process.env.API_KEY || "minesweeper-admin-key";
 
-function requireApiKey(req: FastifyRequest, reply: FastifyReply): boolean {
+// Fastify preHandler hook for admin authentication
+const requireAdminKey = async (req: FastifyRequest, reply: FastifyReply) => {
   const apiKey = req.headers["x-api-key"] || req.headers["authorization"];
 
   if (!apiKey || apiKey !== API_KEY) {
@@ -22,11 +23,9 @@ function requireApiKey(req: FastifyRequest, reply: FastifyReply): boolean {
       message:
         "Valid API key required. Provide it via 'X-API-Key' or 'Authorization' header.",
     });
-    return false;
+    return;
   }
-
-  return true;
-}
+};
 
 // In-memory game sessions: { [id]: MinesweeperGame }
 const games: Record<string, MinesweeperGame> = {};
@@ -399,17 +398,19 @@ fastify.post<{ Params: { id: string }; Body: Position }>(
 );
 
 // List all active games (IDs only) - requires API key
-fastify.get("/api/games", async (req: FastifyRequest, reply: FastifyReply) => {
-  if (!requireApiKey(req, reply)) {
-    return;
-  }
-
-  reply.send({
-    ids: Object.keys(games),
-    total: Object.keys(games).length,
-    message: "Active game sessions",
-  });
-});
+fastify.get(
+  "/api/games",
+  {
+    preHandler: requireAdminKey,
+  },
+  async (req: FastifyRequest, reply: FastifyReply) => {
+    reply.send({
+      ids: Object.keys(games),
+      total: Object.keys(games).length,
+      message: "Active game sessions",
+    });
+  },
+);
 
 // CLI-style command endpoint: accepts commands like 'A1', 'F B2', 'Q', etc.
 fastify.post<{ Params: { id: string }; Body: { command: string } }>(
