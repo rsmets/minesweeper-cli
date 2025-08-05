@@ -12,6 +12,12 @@ export class MinesweeperGame {
   private config: GameConfig;
   private state: GameState;
 
+  /**
+   * Create a new Minesweeper game instance
+   * Initializes the grid, places bombs, and calculates adjacent bomb counts
+   *
+   * @param config - Game configuration including grid dimensions and bomb percentage
+   */
   constructor(config: GameConfig) {
     gameLogger.debug('Initializing new MinesweeperGame', { config });
     this.config = config;
@@ -37,6 +43,9 @@ export class MinesweeperGame {
 
   /**
    * Initialize empty grid with hidden cells
+   * Creates a 2D array of cells, all starting as hidden and bomb-free
+   *
+   * @returns 2D array of Cell objects representing the game grid
    */
   private initializeGrid(): Cell[][] {
     const grid: Cell[][] = [];
@@ -55,6 +64,9 @@ export class MinesweeperGame {
 
   /**
    * Place bombs randomly on the grid
+   * Calculates bomb count based on percentage and randomly distributes them
+   *
+   * @returns void
    */
   private placeBombs(): void {
     const totalCells = this.config.width * this.config.height;
@@ -92,6 +104,9 @@ export class MinesweeperGame {
 
   /**
    * Calculate adjacent bomb counts for all cells
+   * Iterates through all non-bomb cells and counts neighboring bombs
+   *
+   * @returns void
    */
   private calculateAdjacentBombs(): void {
     for (let row = 0; row < this.config.height; row++) {
@@ -108,6 +123,10 @@ export class MinesweeperGame {
 
   /**
    * Count bombs in the 8 adjacent cells (including diagonals)
+   * Checks all 8 surrounding cells for bombs and returns the total count
+   *
+   * @param pos - The position to check around
+   * @returns Number of bombs in adjacent cells (0-8)
    */
   private countAdjacentBombs(pos: Position): number {
     let count = 0;
@@ -139,6 +158,10 @@ export class MinesweeperGame {
 
   /**
    * Check if position is within grid bounds
+   * Validates that row and column are within the game grid dimensions
+   *
+   * @param pos - The position to validate
+   * @returns true if position is valid, false otherwise
    */
   private isValidPosition(pos: Position): boolean {
     return (
@@ -151,6 +174,10 @@ export class MinesweeperGame {
 
   /**
    * Reveal a cell and handle game logic
+   * Handles bomb detection, recursive revealing, and win condition checking
+   *
+   * @param pos - The position of the cell to reveal
+   * @returns true if the action was successful, false if invalid
    */
   public revealCell(pos: Position): boolean {
     gameLogger.debug('Attempting to reveal cell', { position: pos });
@@ -191,6 +218,10 @@ export class MinesweeperGame {
 
   /**
    * Recursively reveal cells (flood fill for empty cells)
+   * Reveals the cell and continues to adjacent cells if no bombs are nearby
+   *
+   * @param pos - The position of the cell to reveal recursively
+   * @returns void
    */
   private revealCellRecursive(pos: Position): void {
     if (!this.isValidPosition(pos)) return;
@@ -234,6 +265,9 @@ export class MinesweeperGame {
 
   /**
    * Reveal all bombs (called when game is lost)
+   * Makes all bomb cells visible on the grid for game over display
+   *
+   * @returns void
    */
   private revealAllBombs(): void {
     for (let row = 0; row < this.config.height; row++) {
@@ -247,6 +281,10 @@ export class MinesweeperGame {
 
   /**
    * Toggle flag on a cell
+   * Switches between flagged and hidden states for unrevealed cells
+   *
+   * @param pos - The position of the cell to flag/unflag
+   * @returns true if the action was successful, false if invalid
    */
   public toggleFlag(pos: Position): boolean {
     if (
@@ -271,6 +309,9 @@ export class MinesweeperGame {
 
   /**
    * Get current game state (read-only)
+   * Provides access to the current game state without allowing modifications
+   *
+   * @returns Read-only copy of the current game state
    */
   public getGameState(): Readonly<GameState> {
     return this.state;
@@ -278,6 +319,9 @@ export class MinesweeperGame {
 
   /**
    * Get game configuration (read-only)
+   * Provides access to the game configuration without allowing modifications
+   *
+   * @returns Read-only copy of the game configuration
    */
   public getConfig(): Readonly<GameConfig> {
     return this.config;

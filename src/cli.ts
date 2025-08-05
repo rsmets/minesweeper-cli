@@ -13,7 +13,10 @@ export class MinesweeperCLI {
   }
 
   /**
-   * Start the CLI application
+   * Start the CLI application and run the complete game flow
+   * Handles configuration, game initialization, and cleanup
+   *
+   * @returns Promise that resolves when the game session is complete
    */
   public async start(): Promise<void> {
     console.log("\n🎮 Welcome to Minesweeper CLI! 🎮\n");
@@ -39,6 +42,9 @@ export class MinesweeperCLI {
 
   /**
    * Prompt user for game configuration (grid size and bomb percentage)
+   * Uses environment variables as defaults when available
+   *
+   * @returns Promise that resolves to the validated game configuration
    */
   private async getGameConfiguration(): Promise<GameConfig> {
     console.log("⚙️  Game Configuration");
@@ -91,7 +97,16 @@ export class MinesweeperCLI {
   }
 
   /**
-   * Validate and parse numeric input
+   * Validate and parse numeric input with range checking
+   * Returns default value for empty input when available
+   *
+   * @param input - The user input string to validate
+   * @param min - Minimum allowed value (inclusive)
+   * @param max - Maximum allowed value (inclusive)
+   * @param fieldName - Name of the field for error messages
+   * @param defaultValue - Optional default value to use for empty input
+   * @returns The validated numeric value
+   * @throws Error if input is invalid and no default is provided
    */
   private validateNumber(
     input: string,
@@ -139,6 +154,9 @@ export class MinesweeperCLI {
 
   /**
    * Main game loop - handle user input and game state
+   * Continues until the game ends (win/lose) or user quits
+   *
+   * @returns Promise that resolves when the game loop exits
    */
   private async gameLoop(): Promise<void> {
     while (
@@ -166,6 +184,10 @@ export class MinesweeperCLI {
 
   /**
    * Process user input (reveal cell, flag cell, etc.)
+   * Parses commands like "A1" to reveal or "F A1" to flag
+   *
+   * @param input - The raw user input string to process
+   * @returns void
    */
   private processInput(input: string): void {
     if (!this.game) return;
@@ -210,6 +232,10 @@ export class MinesweeperCLI {
 
   /**
    * Parse coordinate string (e.g., "A1") to Position object
+   * Converts letter-number format to zero-based row/column indices
+   *
+   * @param coordinate - The coordinate string to parse (e.g., "A1", "B3")
+   * @returns Position object with row/col indices, or null if invalid
    */
   private parseCoordinate(coordinate: string): Position | null {
     if (coordinate.length < 2) return null;
@@ -235,7 +261,10 @@ export class MinesweeperCLI {
   }
 
   /**
-   * Display the current game board
+   * Display the current game board with grid coordinates
+   * Shows revealed cells, flags, and hidden cells with appropriate symbols
+   *
+   * @returns void
    */
   private displayBoard(): void {
     if (!this.game) return;
@@ -285,6 +314,9 @@ export class MinesweeperCLI {
 
   /**
    * Display game result (win/lose message)
+   * Shows appropriate celebration or game over message based on game status
+   *
+   * @returns void
    */
   private displayGameResult(): void {
     if (!this.game) return;
