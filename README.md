@@ -32,7 +32,7 @@ Then open http://localhost:8080 in your browser.
 pnpm install
 pnpm build
 pnpm start:server
-```
+``` 
 
 ### Command Line Interface
 
@@ -91,8 +91,11 @@ pnpm start:server
 pnpm start:server # With custom port
 ```
 
-**Endpoints:**
-- `GET /` - Web interface
+**Web Endpoints:**
+- `GET /` - Game interface (play Minesweeper in browser)
+- `GET /mcp` - MCP integration documentation and setup
+
+**API Endpoints:**
 - `GET /api/health` - Health check
 - `POST /api/game` - Create new game
 - `GET /api/games` - List all active games (IDs only) - requires admin key
@@ -236,34 +239,15 @@ curl -H "X-Admin-Key: minesweeper-admin-key" http://localhost:8080/api/games
 
 This server supports the Model Context Protocol, allowing AI assistants to interact with the Minesweeper game using natural language. All API endpoints are automatically exposed as MCP tools.
 
-More detailed information can be found in [MCP.md](./MCP.md).
+### Quick Setup
 
-### Quick Setup for AI Assistants
-
-**Windsurf IDE Configuration**:
-```json
-{
-  "mcp": {
-    "servers": {
-      "minesweeper": {
-        "serverUrl": "http://localhost:8080/mcp/sse",
-      }
-    }
-  }
-}
-```
-
-**Verify MCP Setup:**
-```bash
-# Check if MCP tools are available
-curl http://localhost:8080/mcp/tools
-
-# Should return array of tools like createGame, getGameState, etc.
-```
+1. **Start the server**: `pnpm run dev:server` 
+2. **Visit MCP page**: Open `http://localhost:8080/mcp` for setup instructions
+3. **Configure your AI client** with the SSE endpoint: `http://localhost:8080/mcp/sse`
 
 **Available MCP Tools:**
 - `createGame` - Create new Minesweeper game
-- `getGameState` - Get current game state
+- `getGameState` - Get current game state  
 - `revealCell` - Reveal a cell at specified coordinates
 - `flagCell` - Flag/unflag a cell
 - `executeCommand` - Run text commands like "reveal 3 4"
@@ -276,12 +260,13 @@ curl http://localhost:8080/mcp/tools
 - "Flag the cell at position (2, 7)"
 - "Show me the current game state"
 
-**Troubleshooting:**
-- Ensure server is running: `curl http://localhost:8080/api/health`
-- Check for "MCP plugin registered" in server logs
-- Verify correct URL format (note the `/sse` suffix)
+**Quick Verification:**
+```bash
+# Check if MCP tools are available
+curl http://localhost:8080/mcp/tools
+```
 
-For detailed MCP setup, troubleshooting, and advanced usage, see [MCP-INTEGRATION.md](MCP-INTEGRATION.md).
+For detailed setup instructions, client configuration examples, and troubleshooting, visit the **MCP Integration page** at `http://localhost:8080/mcp` or see [MCP-INTEGRATION.md](MCP-INTEGRATION.md).
 
 ## Example Game Flow (CLI)
 

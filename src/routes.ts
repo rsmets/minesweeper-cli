@@ -1,4 +1,9 @@
-import { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
+import {
+  FastifyInstance,
+  FastifyPluginAsync,
+  FastifyRequest,
+  FastifyReply,
+} from "fastify";
 import { MinesweeperGame } from "./game";
 import { renderBoardText } from "./serverBoardText";
 import { GameConfig, Position, CellState } from "./types";
@@ -234,7 +239,10 @@ const routesPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       schema: routeSchemas.executeCommand,
     },
     async (
-      req: FastifyRequest<{ Params: { id: string }; Body: { command: string } }>,
+      req: FastifyRequest<{
+        Params: { id: string };
+        Body: { command: string };
+      }>,
       reply: FastifyReply,
     ) => {
       const game = games[req.params.id];
@@ -242,67 +250,86 @@ const routesPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
 
       const input = req.body.command.trim();
       let message = "";
+      let gameState = game.getGameState();
 
-      try {
-        const parts = input.toLowerCase().split(/\s+/);
-        const action = parts[0];
-        const row = parseInt(parts[1], 10);
-        const col = parseInt(parts[2], 10);
-
-        if (isNaN(row) || isNaN(col)) {
-          return reply.code(400).send({
-            error: "Invalid command format. Use: 'reveal 3 4' or 'flag 2 5'",
-          });
-        }
-
-        const config = game.getConfig();
-        if (row < 0 || row >= config.height || col < 0 || col >= config.width) {
-          return reply.code(400).send({ error: "Position out of bounds" });
-        }
-
-        let success = false;
-        switch (action) {
-          case "reveal":
-          case "r":
-            success = game.revealCell({ row, col });
-            message = success
-              ? `Revealed cell at (${row}, ${col})`
-              : `Cannot reveal cell at (${row}, ${col}) - it may already be revealed or flagged`;
-            break;
-          case "flag":
-          case "f":
-            success = game.toggleFlag({ row, col });
-            message = success
-              ? `Toggled flag at (${row}, ${col})`
-              : `Cannot flag cell at (${row}, ${col}) - it may already be revealed`;
-            break;
-          default:
-            return reply
-              .code(400)
-              .send({ error: "Unknown command. Use 'reveal' or 'flag'" });
-        }
-
-        if (!success) {
-          return reply.code(400).send({ error: message });
-        }
-
-        const gameState = game.getGameState();
+      // Handle empty command (just return current board)
+      if (input === "") {
+        message =
+          "Enter a command like A1 to reveal, F A1 to flag, or Q to quit";
         reply.send({
+          board: renderBoardText(game.getConfig(), gameState),
           message,
-          gameState: {
-            id: req.params.id,
-            config: game.getConfig(),
-            status: gameState.status,
-            board: renderBoardText(game.getConfig(), gameState),
-            flags: gameState.grid
-              .flat()
-              .filter((cell) => cell.state === CellState.FLAGGED).length,
-            remainingCells: gameState.totalSafeCells - gameState.revealedCells,
-          },
+          status: gameState.status,
         });
-      } catch (error) {
-        reply.code(400).send({ error: (error as Error).message });
+        return;
       }
+
+      // Parse CLI-style commands: 'F A1', 'A1', 'Q'
+      const flagMatch = input.match(/^F\s+([A-Z])(\d{1,2})$/i);
+      const revealMatch = input.match(/^([A-Z])(\d{1,2})$/i);
+      const quitMatch = input.match(/^Q(UIT)?$/i);
+
+      if (quitMatch) {
+        message = "Game quit.";
+        reply.send({
+          board: renderBoardText(game.getConfig(), gameState),
+          message,
+          status: "QUIT",
+        });
+        return;
+      }
+
+      let success = false;
+      const config = game.getConfig();
+
+      if (flagMatch) {
+        const col =
+          flagMatch[1].toUpperCase().charCodeAt(0) - "A".charCodeAt(0);
+        const row = parseInt(flagMatch[2], 10) - 1;
+
+        if (row < 0 || row >= config.height || col < 0 || col >= config.width) {
+          message = `Position ${flagMatch[1].toUpperCase()}${flagMatch[2]} is out of bounds. Valid range: A1-${String.fromCharCode(65 + config.width - 1)}${config.height}`;
+        } else {
+          success = game.toggleFlag({ row, col });
+          message = success
+            ? `Flag toggled at ${flagMatch[1].toUpperCase()}${flagMatch[2]}`
+            : `Cannot flag ${flagMatch[1].toUpperCase()}${flagMatch[2]} - cell may already be revealed`;
+        }
+      } else if (revealMatch) {
+        const col =
+          revealMatch[1].toUpperCase().charCodeAt(0) - "A".charCodeAt(0);
+        const row = parseInt(revealMatch[2], 10) - 1;
+
+        if (row < 0 || row >= config.height || col < 0 || col >= config.width) {
+          message = `Position ${revealMatch[1].toUpperCase()}${revealMatch[2]} is out of bounds. Valid range: A1-${String.fromCharCode(65 + config.width - 1)}${config.height}`;
+        } else {
+          success = game.revealCell({ row, col });
+          message = success
+            ? `Revealed ${revealMatch[1].toUpperCase()}${revealMatch[2]}`
+            : `Cannot reveal ${revealMatch[1].toUpperCase()}${revealMatch[2]} - cell may already be revealed or flagged`;
+        }
+      } else {
+        message = `Invalid command "${input}". Valid commands: A1-${String.fromCharCode(65 + config.width - 1)}${config.height} to reveal, F A1-${String.fromCharCode(65 + config.width - 1)}${config.height} to flag, Q to quit`;
+      }
+
+      // Get updated game state
+      gameState = game.getGameState();
+
+      reply.send({
+        board: renderBoardText(game.getConfig(), gameState),
+        message,
+        status: gameState.status,
+        gameState: {
+          id: req.params.id,
+          config: game.getConfig(),
+          status: gameState.status,
+          board: renderBoardText(game.getConfig(), gameState),
+          flags: gameState.grid
+            .flat()
+            .filter((cell) => cell.state === CellState.FLAGGED).length,
+          remainingCells: gameState.totalSafeCells - gameState.revealedCells,
+        },
+      });
     },
   );
 };
