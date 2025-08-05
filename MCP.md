@@ -256,13 +256,7 @@ PORT=8080 ADMIN_KEY=your-secret-key pnpm run start:server
 PORT=8080                          # Server port (default: 8080)
 ADMIN_KEY=your-secret-admin-key    # Admin key for protected endpoints (optional)
 LOG_LEVEL=info                     # Logging level: silent, error, warn, info, debug, trace
-NODE_ENV=production                # Environment mode (affects CORS policy)
 ```
-
-**CORS Configuration:**
-- **Development** (`NODE_ENV=development`): Allows CORS from all origins for easy MCP client testing
-- **Production** (`NODE_ENV=production`): Restricts CORS to known MCP clients (Claude, Cursor) for security
-- **Fly.io Deployment**: Automatically uses production mode with restricted CORS origins
 
 ### Verifying MCP Setup
 
