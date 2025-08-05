@@ -17,15 +17,16 @@ interface MockReply {
 async function requireAdminKey(
   req: MockRequest,
   reply: MockReply,
-  apiKey: string = "minesweeper-admin-key",
+  adminKey: string = "minesweeper-admin-key",
 ): Promise<void> {
-  const providedKey = req.headers["x-api-key"] || req.headers["authorization"];
+  const providedKey =
+    req.headers["x-admin-key"] || req.headers["authorization"];
 
-  if (!providedKey || providedKey !== apiKey) {
+  if (!providedKey || providedKey !== adminKey) {
     reply.code(401).send({
       error: "Unauthorized",
       message:
-        "Valid API key required. Provide it via 'X-API-Key' or 'Authorization' header.",
+        "Valid admin key required. Provide it via 'X-Admin-Key' or 'Authorization' header.",
     });
     return;
   }
@@ -48,10 +49,10 @@ function createMockReply(): MockReply {
 
 describe("Server Authorization", () => {
   describe("requireAdminKey function", () => {
-    test("should allow access with valid X-API-Key header", async () => {
+    test("should allow access with valid X-Admin-Key header", async () => {
       const req: MockRequest = {
         headers: {
-          "x-api-key": "minesweeper-admin-key",
+          "x-admin-key": "minesweeper-admin-key",
         },
       };
       const reply = createMockReply();
@@ -76,10 +77,10 @@ describe("Server Authorization", () => {
       assert.strictEqual(reply.response, undefined);
     });
 
-    test("should deny access with invalid API key", async () => {
+    test("should deny access with invalid admin key", async () => {
       const req: MockRequest = {
         headers: {
-          "x-api-key": "invalid-key",
+          "x-admin-key": "invalid-key",
         },
       };
       const reply = createMockReply();
@@ -89,11 +90,11 @@ describe("Server Authorization", () => {
       assert.deepStrictEqual(reply.response, {
         error: "Unauthorized",
         message:
-          "Valid API key required. Provide it via 'X-API-Key' or 'Authorization' header.",
+          "Valid admin key required. Provide it via 'X-Admin-Key' or 'Authorization' header.",
       });
     });
 
-    test("should deny access with missing API key", async () => {
+    test("should deny access with missing admin key", async () => {
       const req: MockRequest = {
         headers: {},
       };
@@ -104,15 +105,15 @@ describe("Server Authorization", () => {
       assert.deepStrictEqual(reply.response, {
         error: "Unauthorized",
         message:
-          "Valid API key required. Provide it via 'X-API-Key' or 'Authorization' header.",
+          "Valid admin key required. Provide it via 'X-Admin-Key' or 'Authorization' header.",
       });
     });
 
-    test("should work with custom API key", async () => {
+    test("should work with custom admin key", async () => {
       const customKey = "custom-secret-key";
       const req: MockRequest = {
         headers: {
-          "x-api-key": customKey,
+          "x-admin-key": customKey,
         },
       };
       const reply = createMockReply();
@@ -123,11 +124,11 @@ describe("Server Authorization", () => {
       assert.strictEqual(reply.response, undefined);
     });
 
-    test("should deny access with wrong custom API key", async () => {
+    test("should deny access with wrong custom admin key", async () => {
       const customKey = "custom-secret-key";
       const req: MockRequest = {
         headers: {
-          "x-api-key": "wrong-key",
+          "x-admin-key": "wrong-key",
         },
       };
       const reply = createMockReply();
@@ -136,10 +137,10 @@ describe("Server Authorization", () => {
       assert.strictEqual(reply.statusCode, 401);
     });
 
-    test("should prioritize X-API-Key over Authorization header", async () => {
+    test("should prioritize X-Admin-Key over Authorization header", async () => {
       const req: MockRequest = {
         headers: {
-          "x-api-key": "minesweeper-admin-key",
+          "x-admin-key": "minesweeper-admin-key",
           authorization: "wrong-key",
         },
       };
@@ -150,7 +151,7 @@ describe("Server Authorization", () => {
       assert.strictEqual(reply.statusCode, undefined);
     });
 
-    test("should fall back to Authorization header if X-API-Key is missing", async () => {
+    test("should fall back to Authorization header if X-Admin-Key is missing", async () => {
       const req: MockRequest = {
         headers: {
           authorization: "minesweeper-admin-key",
@@ -164,11 +165,11 @@ describe("Server Authorization", () => {
     });
   });
 
-  describe("API Key Validation", () => {
-    test("should handle empty string API key", async () => {
+  describe("Admin Key Validation", () => {
+    test("should handle empty string admin key", async () => {
       const req: MockRequest = {
         headers: {
-          "x-api-key": "",
+          "x-admin-key": "",
         },
       };
       const reply = createMockReply();
@@ -177,10 +178,10 @@ describe("Server Authorization", () => {
       assert.strictEqual(reply.statusCode, 401);
     });
 
-    test("should handle whitespace-only API key", async () => {
+    test("should handle whitespace-only admin key", async () => {
       const req: MockRequest = {
         headers: {
-          "x-api-key": "   ",
+          "x-admin-key": "   ",
         },
       };
       const reply = createMockReply();
@@ -192,7 +193,7 @@ describe("Server Authorization", () => {
     test("should be case-sensitive", async () => {
       const req: MockRequest = {
         headers: {
-          "x-api-key": "MINESWEEPER-ADMIN-KEY", // uppercase
+          "x-admin-key": "MINESWEEPER-ADMIN-KEY", // uppercase
         },
       };
       const reply = createMockReply();
@@ -206,7 +207,7 @@ describe("Server Authorization", () => {
     test("should handle headers with different cases", async () => {
       const req: MockRequest = {
         headers: {
-          "X-API-KEY": "minesweeper-admin-key", // uppercase header name
+          "X-ADMIN-KEY": "minesweeper-admin-key", // uppercase header name
         },
       };
       const reply = createMockReply();
@@ -234,10 +235,10 @@ describe("Server Authorization", () => {
   });
 
   describe("Security Considerations", () => {
-    test("should not reveal the expected API key in error messages", async () => {
+    test("should not reveal the expected admin key in error messages", async () => {
       const req: MockRequest = {
         headers: {
-          "x-api-key": "wrong-key",
+          "x-admin-key": "wrong-key",
         },
       };
       const reply = createMockReply();
@@ -247,7 +248,7 @@ describe("Server Authorization", () => {
       assert.strictEqual(reply.response?.error, "Unauthorized");
       assert(
         !reply.response?.message.includes("minesweeper-admin-key"),
-        "Error message should not reveal the expected API key",
+        "Error message should not reveal the expected admin key",
       );
     });
 
@@ -261,8 +262,8 @@ describe("Server Authorization", () => {
 
       assert.strictEqual(reply.response?.error, "Unauthorized");
       assert(
-        reply.response?.message.includes("X-API-Key"),
-        "Error message should mention the X-API-Key header",
+        reply.response?.message.includes("X-Admin-Key"),
+        "Error message should mention the X-Admin-Key header",
       );
       assert(
         reply.response?.message.includes("Authorization"),

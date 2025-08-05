@@ -6,22 +6,22 @@ import { randomUUID } from "crypto";
 
 // Environment variables:
 // - PORT: Server port (default: 8080)
-// - API_KEY: API key for protected endpoints (default: "minesweeper-admin-key")
+// - ADMIN_KEY: Admin key for protected endpoints (default: "minesweeper-admin-key")
 
 const fastify = Fastify({ logger: true });
 
 // Authorization middleware
-const API_KEY = process.env.API_KEY || "minesweeper-admin-key";
+const ADMIN_KEY = process.env.ADMIN_KEY || "minesweeper-admin-key";
 
 // Fastify preHandler hook for admin authentication
 const requireAdminKey = async (req: FastifyRequest, reply: FastifyReply) => {
-  const apiKey = req.headers["x-api-key"] || req.headers["authorization"];
+  const adminKey = req.headers["x-admin-key"] || req.headers["authorization"];
 
-  if (!apiKey || apiKey !== API_KEY) {
+  if (!adminKey || adminKey !== ADMIN_KEY) {
     reply.code(401).send({
       error: "Unauthorized",
       message:
-        "Valid API key required. Provide it via 'X-API-Key' or 'Authorization' header.",
+        "Valid admin key required. Provide it via 'X-Admin-Key' or 'Authorization' header.",
     });
     return;
   }

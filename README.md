@@ -218,10 +218,10 @@ curl -X POST http://localhost:3000/api/game/{gameId}/command \
 ### List All Games (Protected)
 ```bash
 # Requires API key authentication
-curl -H "X-API-Key: minesweeper-admin-key" http://localhost:8080/api/games
+curl -H "X-Admin-Key: minesweeper-admin-key" http://localhost:8080/api/games
 ```
 
-> **Note**: The `/api/games` endpoint requires API key authentication. See [API_AUTHORIZATION.md](API_AUTHORIZATION.md) for detailed authorization documentation.
+> **Note**: The `/api/games` endpoint requires admin key authentication. See [API_AUTHORIZATION.md](API_AUTHORIZATION.md) for detailed authorization documentation.
 
 ## Example Game Flow (CLI)
 
