@@ -80,22 +80,6 @@ While the projct is hosted you can also use:
 }
 ```
 
-### Windsurf IDE
-
-For Windsurf IDE, you can configure MCP servers in your settings:
-
-```json
-{
-  "mcp": {
-    "servers": {
-      "minesweeper": {
-        "serverUrl": "http://localhost:8080/mcp/sse",
-      }
-    }
-  }
-}
-```
-
 ### Custom MCP Client
 
 Using a custom MCP client (like `@modelcontextprotocol/sdk`):
