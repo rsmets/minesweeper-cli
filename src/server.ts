@@ -13,24 +13,9 @@ const fastify = Fastify({ logger: true });
 // In-memory game sessions: { [id]: MinesweeperGame }
 const games: Record<string, MinesweeperGame> = {};
 
-// Serve static frontend
-fastify.register(fastifyStatic, {
-  root: path.join(__dirname, "../frontend/dist"),
-  prefix: "/static/",
-});
-
-// Serve index.html at root with fallback
+// Serve index.html at root - inline HTML to avoid file path issues
 fastify.get("/", async (req, reply) => {
-  const fs = require("fs");
-  const indexPath = path.join(__dirname, "../frontend/dist/index.html");
-
-  try {
-    if (fs.existsSync(indexPath)) {
-      const html = fs.readFileSync(indexPath, "utf8");
-      reply.type("text/html").send(html);
-    } else {
-      // Inline HTML fallback if file doesn't exist
-      reply.type("text/html").send(`
+  reply.type("text/html").send(`
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -38,92 +23,175 @@ fastify.get("/", async (req, reply) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Minesweeper Web</title>
     <style>
-        body { font-family: monospace; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; }
-        .container { background: rgba(255,255,255,0.95); border-radius: 15px; padding: 30px; max-width: 800px; width: 100%; }
-        h1 { text-align: center; color: #333; margin-bottom: 20px; }
-        .board { background: #1a1a1a; color: #00ff00; padding: 20px; border-radius: 10px; font-family: monospace; white-space: pre; text-align: center; min-height: 200px; }
-        .controls { display: flex; gap: 10px; margin: 20px 0; justify-content: center; }
-        input, button { padding: 10px; border-radius: 5px; }
-        button { background: #667eea; color: white; border: none; cursor: pointer; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Courier New', monospace; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .container { background: rgba(255, 255, 255, 0.95); border-radius: 15px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); padding: 30px; max-width: 800px; width: 100%; }
+        h1 { text-align: center; color: #333; margin-bottom: 20px; font-size: 2.5em; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1); }
+        .game-controls { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; flex-wrap: wrap; }
+        .config-group { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .config-group label { font-weight: bold; color: #555; font-size: 0.9em; }
+        .config-group input { width: 80px; padding: 8px; border: 2px solid #ddd; border-radius: 5px; text-align: center; font-size: 1em; }
+        button { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: bold; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); }
+        button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .board-container { background: #1a1a1a; border-radius: 10px; padding: 20px; margin: 20px 0; box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.3); }
+        .board { color: #00ff00; font-family: 'Courier New', monospace; font-size: 1.1em; line-height: 1.4; white-space: pre; text-align: center; min-height: 200px; display: flex; align-items: center; justify-content: center; }
+        .command-section { display: flex; gap: 10px; margin: 20px 0; justify-content: center; }
+        #commandInput { flex: 1; max-width: 300px; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 1.1em; font-family: 'Courier New', monospace; }
+        .message { text-align: center; min-height: 50px; display: flex; align-items: center; justify-content: center; font-size: 1.1em; font-weight: bold; color: #e74c3c; background: rgba(231, 76, 60, 0.1); border-radius: 8px; padding: 10px; margin: 10px 0; }
+        .message.success { color: #27ae60; background: rgba(39, 174, 96, 0.1); }
+        .message.info { color: #3498db; background: rgba(52, 152, 219, 0.1); }
+        .instructions { background: rgba(52, 152, 219, 0.1); border-left: 4px solid #3498db; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+        .instructions h3 { color: #3498db; margin-bottom: 10px; }
+        .instructions p { margin: 5px 0; color: #555; }
+        @media (max-width: 600px) { .container { padding: 20px; margin: 10px; } h1 { font-size: 2em; } .board { font-size: 0.9em; } .game-controls { flex-direction: column; align-items: center; } .command-section { flex-direction: column; } #commandInput { max-width: none; } }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🎮 Minesweeper Web 💣</h1>
-        <div class="controls">
-            <input type="number" id="width" value="10" placeholder="Width">
-            <input type="number" id="height" value="10" placeholder="Height">
-            <input type="number" id="bombs" value="15" placeholder="Bombs %">
-            <button onclick="createGame()">New Game</button>
+        <div class="game-controls">
+            <div class="config-group">
+                <label for="width">Width</label>
+                <input type="number" id="width" value="10" min="3" max="50">
+            </div>
+            <div class="config-group">
+                <label for="height">Height</label>
+                <input type="number" id="height" value="10" min="3" max="50">
+            </div>
+            <div class="config-group">
+                <label for="bombPercentage">Bombs %</label>
+                <input type="number" id="bombPercentage" value="15" min="5" max="40" step="0.1">
+            </div>
+            <button onclick="createNewGame()">New Game</button>
         </div>
-        <div id="board" class="board">Click "New Game" to start!</div>
-        <div class="controls">
-            <input type="text" id="command" placeholder="Enter command (A1, F B2, Q)">
-            <button onclick="sendCommand()">Send</button>
+        <div class="board-container">
+            <div id="board" class="board">Click "New Game" to start playing!</div>
         </div>
-        <div id="message" style="text-align: center; margin: 10px; color: red;"></div>
+        <div class="command-section">
+            <input type="text" id="commandInput" placeholder="Enter command (e.g., A1, F B2, Q)" autocomplete="off">
+            <button onclick="submitCommand()">Send Command</button>
+        </div>
+        <div id="message" class="message"></div>
+        <div class="instructions">
+            <h3>📋 How to Play:</h3>
+            <p><strong>Reveal cell:</strong> Type coordinates like "A1", "B5", "C10"</p>
+            <p><strong>Flag/Unflag:</strong> Type "F A1", "F B5", etc.</p>
+            <p><strong>Quit game:</strong> Type "Q" or "QUIT"</p>
+            <p><strong>Goal:</strong> Reveal all cells without bombs to win!</p>
+        </div>
     </div>
     <script>
         let gameId = '';
-        async function createGame() {
-            const width = document.getElementById('width').value || 10;
-            const height = document.getElementById('height').value || 10;
-            const bombPercentage = document.getElementById('bombs').value || 15;
+        let isLoading = false;
+        let gameActive = false;
+
+        async function createNewGame() {
+            if (isLoading) return;
+            setLoading(true);
+            const width = parseInt(document.getElementById('width').value);
+            const height = parseInt(document.getElementById('height').value);
+            const bombPercentage = parseFloat(document.getElementById('bombPercentage').value);
+            if (width < 3 || width > 50 || height < 3 || height > 50 || bombPercentage < 5 || bombPercentage > 40) {
+                showMessage('Invalid configuration. Please check your values.', 'error');
+                setLoading(false);
+                return;
+            }
             try {
-                const res = await fetch('/api/game', {
+                const response = await fetch('/api/game', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({width: +width, height: +height, bombPercentage: +bombPercentage})
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ width, height, bombPercentage })
                 });
-                const data = await res.json();
+                if (!response.ok) throw new Error('Failed to create game');
+                const data = await response.json();
                 gameId = data.id;
-                await updateBoard();
-                document.getElementById('message').textContent = 'Game created! Enter commands like A1, F B2, etc.';
-            } catch(e) {
-                document.getElementById('message').textContent = 'Error: ' + e.message;
+                gameActive = true;
+                await refreshBoard();
+                showMessage('Game started! Enter your first command.', 'success');
+                document.getElementById('commandInput').focus();
+            } catch (error) {
+                showMessage('Error creating game: ' + error.message, 'error');
+            } finally {
+                setLoading(false);
             }
         }
-        async function sendCommand() {
-            const command = document.getElementById('command').value.trim();
-            if (!command || !gameId) return;
+
+        async function submitCommand() {
+            const input = document.getElementById('commandInput');
+            const command = input.value.trim().toUpperCase();
+            if (!command || !gameId || isLoading || !gameActive) return;
+            setLoading(true);
             try {
-                const res = await fetch(\`/api/game/\${gameId}/command\`, {
+                const response = await fetch(\`/api/game/\${gameId}/command\`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({command})
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command })
                 });
-                const data = await res.json();
+                if (!response.ok) throw new Error('Failed to execute command');
+                const data = await response.json();
                 document.getElementById('board').textContent = data.boardText || '';
-                document.getElementById('message').textContent = data.message || '';
-                document.getElementById('command').value = '';
-            } catch(e) {
-                document.getElementById('message').textContent = 'Error: ' + e.message;
+                showMessage(data.message || '', data.status === 'WON' ? 'success' : 'info');
+                if (data.status === 'WON') {
+                    showMessage('🎉 Congratulations! You won! 🎉', 'success');
+                    gameActive = false;
+                } else if (data.status === 'LOST') {
+                    showMessage('💥 Game Over! You hit a bomb! 💥', 'error');
+                    gameActive = false;
+                } else if (data.status === 'QUIT') {
+                    showMessage('Game quit.', 'info');
+                    gameActive = false;
+                }
+                input.value = '';
+            } catch (error) {
+                showMessage('Error executing command: ' + error.message, 'error');
+            } finally {
+                setLoading(false);
             }
         }
-        async function updateBoard() {
+
+        async function refreshBoard() {
             if (!gameId) return;
             try {
-                const res = await fetch(\`/api/game/\${gameId}/command\`, {
+                const response = await fetch(\`/api/game/\${gameId}/command\`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({command: ''})
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: '' })
                 });
-                const data = await res.json();
-                document.getElementById('board').textContent = data.boardText || '';
-            } catch(e) { console.error(e); }
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('board').textContent = data.boardText || '';
+                }
+            } catch (error) {
+                console.error('Error refreshing board:', error);
+            }
         }
-        document.getElementById('command').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') sendCommand();
+
+        function showMessage(text, type = 'info') {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = \`message \${type}\`;
+        }
+
+        function setLoading(loading) {
+            isLoading = loading;
+            const buttons = document.querySelectorAll('button');
+            const inputs = document.querySelectorAll('input');
+            buttons.forEach(btn => btn.disabled = loading);
+            inputs.forEach(input => input.disabled = loading);
+        }
+
+        document.getElementById('commandInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') submitCommand();
         });
-        window.onload = () => setTimeout(createGame, 500);
+
+        window.addEventListener('load', function() {
+            setTimeout(createNewGame, 500);
+        });
     </script>
 </body>
 </html>
-      `);
-    }
-  } catch (error) {
-    reply.code(500).send({ error: "Failed to serve frontend" });
-  }
+  `);
 });
 
 // Health check
