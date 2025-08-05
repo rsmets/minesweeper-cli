@@ -14,7 +14,10 @@
     "dev:trace": "LOG_LEVEL=trace tsx --env-file=.env src/index.ts",
     "dev:watch": "tsx --env-file=.env watch src/index.ts",
     "dev:watch:debug": "LOG_LEVEL=debug tsx --env-file=.env watch src/index.ts",
-    "start": "node --env-file=.env dist/index.js"
+    "start": "node --env-file=.env dist/index.js",
+    "test": "tsc && node --test dist/tests/**/*.test.js",
+    "test:watch": "tsc && node --test --watch dist/tests/**/*.test.js",
+    "test:dev": "tsx tests/**/*.test.ts"
   },
   "keywords": [
     "minesweeper",

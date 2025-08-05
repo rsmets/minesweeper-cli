@@ -12,9 +12,9 @@ export interface Position {
 }
 
 export enum CellState {
-  HIDDEN = 'HIDDEN',
-  REVEALED = 'REVEALED',
-  FLAGGED = 'FLAGGED'
+  HIDDEN = "HIDDEN",
+  REVEALED = "REVEALED",
+  FLAGGED = "FLAGGED",
 }
 
 export interface Cell {
@@ -24,9 +24,9 @@ export interface Cell {
 }
 
 export enum GameStatus {
-  PLAYING = 'PLAYING',
-  WON = 'WON',
-  LOST = 'LOST'
+  PLAYING = "PLAYING",
+  WON = "WON",
+  LOST = "LOST",
 }
 
 export interface GameState {
