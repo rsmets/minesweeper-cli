@@ -354,7 +354,7 @@ fastify.get("/mcp", async (req: FastifyRequest, reply: FastifyReply) => {
             <h2>🎮 GIF Demo</h2>
             <p>See the Minesweeper MCP tools in action:</p>
             <div style="text-align: center; margin: 20px 0;">
-                <img src="/static/sweeper.gif" alt="Minesweeper MCP Demo"
+                <img src="/static/sweeper.gif" alt="Minesweeper MCP Demo" loading="lazy"
                      style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
             </div>
         </div>
