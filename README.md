@@ -161,19 +161,6 @@ https://minesweeper.rest/mcp/sse
 }
 ```
 
-**Claude Desktop Configuration:**
-- Unable to get this working sadly, but works well with Windsurf's MCP Client
-```json
-{
-  "mcpServers": {
-    "minesweeper": {
-      "command": "npx",
-      "args": ["-y", "remote-mcp", "https://minesweeper.rest/mcp/sse"]
-    }
-  }
-}
-```
-
 **Available Tools:**
 All the same MCP tools are available on the hosted instance:
 - `createGame`, `getGameState`, `revealCell`, `flagCell`, `quitGame`, `executeCommand`, `getHealth`, `listGames`
