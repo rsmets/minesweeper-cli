@@ -1,14 +1,32 @@
 import Fastify, { FastifyRequest, FastifyReply } from "fastify";
-import fastifyStatic from "@fastify/static";
-import path from "path";
 import { MinesweeperGame } from "./game";
 import { renderBoardText } from "./serverBoardText";
 import { GameConfig, Position, GameStatus } from "./types";
 import { randomUUID } from "crypto";
 
-// __dirname is available in CommonJS
+// Environment variables:
+// - PORT: Server port (default: 8080)
+// - API_KEY: API key for protected endpoints (default: "minesweeper-admin-key")
 
 const fastify = Fastify({ logger: true });
+
+// Authorization middleware
+const API_KEY = process.env.API_KEY || "minesweeper-admin-key";
+
+function requireApiKey(req: FastifyRequest, reply: FastifyReply): boolean {
+  const apiKey = req.headers["x-api-key"] || req.headers["authorization"];
+
+  if (!apiKey || apiKey !== API_KEY) {
+    reply.code(401).send({
+      error: "Unauthorized",
+      message:
+        "Valid API key required. Provide it via 'X-API-Key' or 'Authorization' header.",
+    });
+    return false;
+  }
+
+  return true;
+}
 
 // In-memory game sessions: { [id]: MinesweeperGame }
 const games: Record<string, MinesweeperGame> = {};
@@ -240,42 +258,6 @@ fastify.get("/api/health", async (req: FastifyRequest, reply: FastifyReply) => {
   }
 });
 
-// Additional health check routes for Fly.io compatibility
-fastify.get("/health", async (req: FastifyRequest, reply: FastifyReply) => {
-  reply.status(200).send({ status: "healthy" });
-});
-
-fastify.get("/healthz", async (req: FastifyRequest, reply: FastifyReply) => {
-  reply.status(200).send({ status: "ok" });
-});
-
-// Debug route for deployment troubleshooting
-fastify.get(
-  "/api/debug",
-  async (_req: FastifyRequest, _reply: FastifyReply) => {
-    const fs = require("fs");
-    const staticPath = path.join(__dirname, "../frontend/dist");
-    const indexPath = path.join(staticPath, "index.html");
-
-    return {
-      status: "debug",
-      __dirname,
-      staticPath,
-      indexPath,
-      indexExists: fs.existsSync(indexPath),
-      staticDirExists: fs.existsSync(staticPath),
-      staticDirContents: fs.existsSync(staticPath)
-        ? fs.readdirSync(staticPath)
-        : [],
-      cwd: process.cwd(),
-      env: {
-        PORT: process.env.PORT,
-        NODE_ENV: process.env.NODE_ENV,
-      },
-    };
-  },
-);
-
 // Create new game
 fastify.post<{ Body: GameConfig }>(
   "/api/game",
@@ -416,9 +398,17 @@ fastify.post<{ Params: { id: string }; Body: Position }>(
   },
 );
 
-// List all active games (IDs only)
-fastify.get("/api/games", async (_req: FastifyRequest, reply: FastifyReply) => {
-  reply.send({ ids: Object.keys(games) });
+// List all active games (IDs only) - requires API key
+fastify.get("/api/games", async (req: FastifyRequest, reply: FastifyReply) => {
+  if (!requireApiKey(req, reply)) {
+    return;
+  }
+
+  reply.send({
+    ids: Object.keys(games),
+    total: Object.keys(games).length,
+    message: "Active game sessions",
+  });
 });
 
 // CLI-style command endpoint: accepts commands like 'A1', 'F B2', 'Q', etc.

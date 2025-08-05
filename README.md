@@ -11,6 +11,7 @@ A full-featured Minesweeper game with both command-line interface and web-based 
 - **Visual board display**: Clean ASCII representation (CLI) or interactive web UI
 - **Flag functionality**: Mark suspected bomb locations
 - **REST API**: Full game API for custom integrations
+- **API Authorization**: Protected admin endpoints with API key authentication
 - **Docker support**: Containerized deployment
 - **Simple frontend**: Pure HTML/CSS/JavaScript - no build process required
 
@@ -213,6 +214,14 @@ curl -X POST http://localhost:3000/api/game/{gameId}/command \
   -H "Content-Type: application/json" \
   -d '{"command": "A1"}'
 ```
+
+### List All Games (Protected)
+```bash
+# Requires API key authentication
+curl -H "X-API-Key: minesweeper-admin-key" http://localhost:8080/api/games
+```
+
+> **Note**: The `/api/games` endpoint requires API key authentication. See [API_AUTHORIZATION.md](API_AUTHORIZATION.md) for detailed authorization documentation.
 
 ## Example Game Flow (CLI)
 

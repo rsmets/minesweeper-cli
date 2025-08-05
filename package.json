@@ -20,7 +20,7 @@
     "start:server": "node --env-file=.env dist/server.js",
     "test": "tsc && node --test dist/tests/**/*.test.js",
     "test:watch": "tsc && node --test --watch dist/tests/**/*.test.js",
-    "test:dev": "tsx tests/game.test.ts tests/types.test.ts",
+    "test:dev": "tsx tests/game.test.ts tests/types.test.ts tests/server-auth.test.ts",
     "postbuild": "echo 'Build completed'"
   },
   "keywords": [
@@ -38,8 +38,7 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "pino": "^9.7.0",
     "fastify": "^4.27.2",
-    "@fastify/static": "^7.0.4"
+    "pino": "^9.7.0"
   }
 }
