@@ -256,6 +256,7 @@ PORT=8080 ADMIN_KEY=your-secret-key pnpm run start:server
 PORT=8080                          # Server port (default: 8080)
 ADMIN_KEY=your-secret-admin-key    # Admin key for protected endpoints (optional)
 LOG_LEVEL=info                     # Logging level: silent, error, warn, info, debug, trace
+NODE_ENV=production                # Environment mode
 ```
 
 ### Verifying MCP Setup
