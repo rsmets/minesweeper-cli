@@ -1,10 +1,9 @@
 import Fastify, { FastifyRequest, FastifyReply } from "fastify";
-import { MinesweeperGame } from "./game";
-import { renderBoardText } from "./serverBoardText";
-import { GameConfig, Position, GameStatus } from "./types";
-import { randomUUID } from "crypto";
 import { readFileSync } from "fs";
 import { join } from "path";
+// Use require for the MCP plugin to work around module resolution issues
+const mcpPlugin = require("@mcp-it/fastify");
+import routesPlugin from "./routes";
 
 const fastify = Fastify({ logger: true });
 
@@ -18,27 +17,8 @@ const VERSION = packageJson.version;
 // - PORT: Server port (default: 8080)
 // - ADMIN_KEY: Admin key for protected endpoints
 const PORT = process.env.PORT || 8080;
-const ADMIN_KEY = process.env.ADMIN_KEY;
 
-// Authorization middleware
-// Fastify preHandler hook for admin authentication
-const requireAdminKey = async (req: FastifyRequest, reply: FastifyReply) => {
-  const adminKey = req.headers["x-admin-key"] || req.headers["authorization"];
-
-  if (!adminKey || adminKey !== ADMIN_KEY) {
-    reply.code(401).send({
-      error: "Unauthorized",
-      message:
-        "Valid admin key required. Provide it via 'X-Admin-Key' or 'Authorization' header.",
-    });
-    return;
-  }
-};
-
-// In-memory game sessions: { [id]: MinesweeperGame }
-const games: Record<string, MinesweeperGame> = {};
-
-// Serve index.html at root - inline HTML to avoid file path issues
+// Serve game interface at root
 fastify.get("/", async (req: FastifyRequest, reply: FastifyReply) => {
   reply.type("text/html").send(`
 <!DOCTYPE html>
@@ -69,13 +49,23 @@ fastify.get("/", async (req: FastifyRequest, reply: FastifyReply) => {
         .instructions { background: rgba(52, 152, 219, 0.1); border-left: 4px solid #3498db; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0; }
         .instructions h3 { color: #3498db; margin-bottom: 10px; }
         .instructions p { margin: 5px 0; color: #555; }
-        .version-footer { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd; color: #999; font-size: 0.9em; }
+        .nav-links { text-align: center; margin-bottom: 20px; }
+        .nav-links a { color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold; }
+        .nav-links a:hover { text-decoration: underline; }
+        .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef; color: #6c757d; font-size: 0.9em; }
         @media (max-width: 600px) { .container { padding: 20px; margin: 10px; } h1 { font-size: 2em; } .board { font-size: 0.9em; } .game-controls { flex-direction: column; align-items: center; } .command-section { flex-direction: column; } #commandInput { max-width: none; } }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🎮 Minesweeper Web 💣</h1>
+
+        <div class="nav-links">
+            <a href="/">Game</a>
+            <a href="/mcp">MCP Integration</a>
+            <a href="/api/health">API Health</a>
+        </div>
+
         <div class="game-controls">
             <div class="config-group">
                 <label for="width">Width</label>
@@ -106,8 +96,8 @@ fastify.get("/", async (req: FastifyRequest, reply: FastifyReply) => {
             <p><strong>Quit game:</strong> Type "Q" or "QUIT"</p>
             <p><strong>Goal:</strong> Reveal all cells without bombs to win!</p>
         </div>
-        <div class="version-footer">
-            Minesweeper Web v${VERSION}
+        <div class="footer">
+            Minesweeper v${VERSION} | <a href="/mcp" style="color: #667eea;">MCP Integration</a>
         </div>
     </div>
     <script>
@@ -147,7 +137,7 @@ fastify.get("/", async (req: FastifyRequest, reply: FastifyReply) => {
                 const data = await response.json();
                 gameId = data.id;
                 gameActive = true;
-                await refreshBoard();
+                document.getElementById('board').textContent = data.board;
                 showMessage('Game started! Enter your first command.', 'success');
                 document.getElementById('commandInput').focus();
             } catch (error) {
@@ -170,40 +160,24 @@ fastify.get("/", async (req: FastifyRequest, reply: FastifyReply) => {
                 });
                 if (!response.ok) throw new Error('Failed to execute command');
                 const data = await response.json();
-                document.getElementById('board').textContent = data.boardText || '';
-                showMessage(data.message || '', data.status === 'WON' ? 'success' : 'info');
-                if (data.status === 'WON') {
-                    showMessage('🎉 Congratulations! You won! 🎉', 'success');
-                    gameActive = false;
-                } else if (data.status === 'LOST') {
-                    showMessage('💥 Game Over! You hit a bomb! 💥', 'error');
-                    gameActive = false;
-                } else if (data.status === 'QUIT') {
-                    showMessage('Game quit.', 'info');
-                    gameActive = false;
+                if (data.gameState) {
+                    document.getElementById('board').textContent = data.gameState.board;
+                    showMessage(data.message || '', data.gameState.status === 'WON' ? 'success' : 'info');
+                    if (data.gameState.status === 'WON') {
+                        showMessage('🎉 Congratulations! You won! 🎉', 'success');
+                        gameActive = false;
+                    } else if (data.gameState.status === 'LOST') {
+                        showMessage('💥 Game Over! You hit a bomb! 💥', 'error');
+                        gameActive = false;
+                    }
+                } else {
+                    showMessage(data.message || 'Command executed', 'info');
                 }
                 input.value = '';
             } catch (error) {
                 showMessage('Error executing command: ' + error.message, 'error');
             } finally {
                 setLoading(false);
-            }
-        }
-
-        async function refreshBoard() {
-            if (!gameId) return;
-            try {
-                const response = await fetch(\`/api/game/\${gameId}/command\`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ command: '' })
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    document.getElementById('board').textContent = data.boardText || '';
-                }
-            } catch (error) {
-                console.error('Error refreshing board:', error);
             }
         }
 
@@ -252,253 +226,182 @@ fastify.get("/", async (req: FastifyRequest, reply: FastifyReply) => {
   `);
 });
 
-// Health check - robust for Fly.io
-fastify.get("/api/health", async (req: FastifyRequest, reply: FastifyReply) => {
-  try {
-    reply.status(200).send({
-      status: "ok",
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      version: "1.0.0",
-    });
-  } catch (error) {
-    reply.status(500).send({
-      status: "error",
-      message: error instanceof Error ? error.message : "Unknown error",
-    });
+// Serve MCP information page
+fastify.get("/mcp", async (req: FastifyRequest, reply: FastifyReply) => {
+  reply.type("text/html").send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Integration - Minesweeper</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Courier New', monospace; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .container { background: white; border-radius: 15px; padding: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); max-width: 800px; width: 100%; }
+        h1 { color: #333; text-align: center; margin-bottom: 30px; font-size: 2.5em; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); }
+        .nav-links { text-align: center; margin-bottom: 30px; }
+        .nav-links a { color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold; }
+        .nav-links a:hover { text-decoration: underline; }
+        .api-section { margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #007bff; }
+        .api-section h2 { color: #007bff; margin-bottom: 15px; }
+        .endpoint { margin: 10px 0; padding: 15px; background: white; border-radius: 5px; border: 1px solid #e9ecef; }
+        .method { display: inline-block; padding: 4px 8px; border-radius: 3px; color: white; font-weight: bold; margin-right: 10px; }
+        .get { background: #28a745; }
+        .post { background: #007bff; }
+        .path { font-family: 'Courier New', monospace; color: #495057; }
+        .description { margin-top: 5px; color: #6c757d; font-size: 0.9em; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; margin: 10px 0; }
+        .mcp-info { background: #e7f3ff; border-left-color: #0066cc; }
+        .mcp-config { background: #1e1e1e; color: #f8f8f2; padding: 15px; border-radius: 5px; font-family: 'Courier New', monospace; font-size: 0.9em; }
+        .copy-btn { background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; float: right; font-size: 0.8em; }
+        .copy-btn:hover { background: #0056b3; }
+        .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef; color: #6c757d; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔌 MCP Integration</h1>
+
+        <div class="nav-links">
+            <a href="/">Game</a>
+            <a href="/mcp">MCP Integration</a>
+            <a href="/api/health">API Health</a>
+        </div>
+
+        <div class="api-section mcp-info">
+            <h2>🤖 Model Context Protocol</h2>
+            <p>This server supports the Model Context Protocol (MCP)! Connect AI assistants to play Minesweeper using natural language.</p>
+
+            <h3>MCP Endpoint</h3>
+            <pre><strong>SSE Transport:</strong> http://localhost:${PORT}/mcp/sse</pre>
+
+            <h3>Windsurf IDE Configuration</h3>
+            <div style="position: relative;">
+                <button class="copy-btn" onclick="copyConfig()">Copy</button>
+                <pre class="mcp-config" id="claude-config">{
+  "mcpServers": {
+    "minesweeper": {
+      "serverUrl": "http://localhost:8080/mcp/sse"
+    }
   }
+}</pre>
+            </div>
+        </div>
+
+        <div class="api-section">
+            <h2>🎮 Available MCP Tools</h2>
+            <p>These API endpoints are automatically available as MCP tools:</p>
+
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="path">/api/game</span>
+                <div class="description">Create a new Minesweeper game with custom dimensions and bomb percentage</div>
+            </div>
+
+            <div class="endpoint">
+                <span class="method get">GET</span>
+                <span class="path">/api/game/:id</span>
+                <div class="description">Get the current state of a specific game</div>
+            </div>
+
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="path">/api/game/:id/reveal</span>
+                <div class="description">Reveal a cell at the specified row and column</div>
+            </div>
+
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="path">/api/game/:id/flag</span>
+                <div class="description">Flag or unflag a cell at the specified position</div>
+            </div>
+
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="path">/api/game/:id/command</span>
+                <div class="description">Execute text commands like "reveal 3 4" or "flag 2 5"</div>
+            </div>
+
+            <div class="endpoint">
+                <span class="method get">GET</span>
+                <span class="path">/api/health</span>
+                <div class="description">Check server health and status</div>
+            </div>
+        </div>
+
+        <div class="api-section">
+            <h2>🤖 AI Assistant Examples</h2>
+            <p>Once connected via MCP, you can use natural language:</p>
+            <ul>
+                <li>"Create a 10x10 minesweeper game with 20% bombs"</li>
+                <li>"Reveal the cell at row 5, column 3"</li>
+                <li>"Flag the suspicious cell at position (2, 7)"</li>
+                <li>"Show me the current game state"</li>
+                <li>"What's my current score?"</li>
+            </ul>
+        </div>
+
+        <div class="api-section">
+            <h2>🔗 Useful Links</h2>
+            <ul>
+                <li><a href="/mcp/sse" target="_blank">MCP SSE Endpoint</a></li>
+                <li><a href="/mcp/tools" target="_blank">Debug: Available Tools</a></li>
+                <li><a href="/api/health" target="_blank">API Health Check</a></li>
+                <li><a href="https://github.com/AdirAmsalem/mcp-it" target="_blank">@mcp-it/fastify Plugin</a></li>
+            </ul>
+        </div>
+        <div class="footer">
+            Minesweeper v${VERSION} | <a href="/" style="color: #667eea;">Play Game</a>
+        </div>
+    </div>
+
+    <script>
+        function copyConfig() {
+            const config = document.getElementById('claude-config');
+            navigator.clipboard.writeText(config.textContent).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                const original = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => btn.textContent = original, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
+  `);
 });
 
-// Create new game
-fastify.post<{ Body: GameConfig }>(
-  "/api/game",
-  async (req: FastifyRequest<{ Body: GameConfig }>, reply: FastifyReply) => {
-    const config = req.body;
-
-    // Validate configuration
-    const errors: string[] = [];
-
-    if (!config.width || config.width < 3 || config.width > 50) {
-      errors.push("Width must be between 3 and 50");
-    }
-
-    if (!config.height || config.height < 3 || config.height > 50) {
-      errors.push("Height must be between 3 and 50");
-    }
-
-    if (
-      !config.bombPercentage ||
-      config.bombPercentage < 5 ||
-      config.bombPercentage > 40
-    ) {
-      errors.push("Bomb percentage must be between 5% and 40%");
-    }
-
-    if (errors.length > 0) {
-      return reply.code(400).send({
-        error: "Invalid configuration",
-        details: errors,
-        validRanges: {
-          width: "3-50",
-          height: "3-50",
-          bombPercentage: "5-40",
-        },
-      });
-    }
-
-    const id = randomUUID();
-    games[id] = new MinesweeperGame(config);
-    reply.code(201).send({ id });
-  },
-);
-
-// Get game state
-fastify.get<{ Params: { id: string } }>(
-  "/api/game/:id",
-  async (
-    req: FastifyRequest<{ Params: { id: string } }>,
-    reply: FastifyReply,
-  ) => {
-    const game = games[req.params.id];
-    if (!game) return reply.code(404).send({ error: "Game not found" });
-    reply.send({
-      id: req.params.id,
-      config: game.getConfig(),
-      state: game.getGameState(),
+async function startServer() {
+  try {
+    // Register the MCP plugin FIRST
+    await fastify.register(mcpPlugin, {
+      name: "Minesweeper Game Server",
+      description:
+        "MCP-enabled Minesweeper game API with tools for creating and playing games",
+      mountPath: "/mcp",
+      addDebugEndpoint: true,
     });
-  },
-);
 
-// Reveal cell
-fastify.post<{ Params: { id: string }; Body: Position }>(
-  "/api/game/:id/reveal",
-  async (
-    req: FastifyRequest<{ Params: { id: string }; Body: Position }>,
-    reply: FastifyReply,
-  ) => {
-    const game = games[req.params.id];
-    if (!game) return reply.code(404).send({ error: "Game not found" });
+    // Register routes AFTER MCP plugin
+    await fastify.register(routesPlugin);
 
-    const { row, col } = req.body as Position;
-
-    // Validate position
-    if (typeof row !== "number" || typeof col !== "number") {
-      return reply.code(400).send({
-        error: "Invalid position",
-        details: "Row and column must be numbers",
-      });
-    }
-
-    const config = game.getConfig();
-    if (row < 0 || row >= config.height || col < 0 || col >= config.width) {
-      return reply.code(400).send({
-        error: "Position out of bounds",
-        details: `Row must be 0-${config.height - 1}, column must be 0-${config.width - 1}`,
-      });
-    }
-
-    const ok = game.revealCell({ row, col });
-    if (!ok) {
-      return reply.code(400).send({
-        error: "Cannot reveal cell",
-        details: "Cell may already be revealed or flagged",
-      });
-    }
-
-    reply.send({ ok, state: game.getGameState() });
-  },
-);
-
-// Toggle flag
-fastify.post<{ Params: { id: string }; Body: Position }>(
-  "/api/game/:id/flag",
-  async (
-    req: FastifyRequest<{ Params: { id: string }; Body: Position }>,
-    reply: FastifyReply,
-  ) => {
-    const game = games[req.params.id];
-    if (!game) return reply.code(404).send({ error: "Game not found" });
-
-    const { row, col } = req.body as Position;
-
-    // Validate position
-    if (typeof row !== "number" || typeof col !== "number") {
-      return reply.code(400).send({
-        error: "Invalid position",
-        details: "Row and column must be numbers",
-      });
-    }
-
-    const config = game.getConfig();
-    if (row < 0 || row >= config.height || col < 0 || col >= config.width) {
-      return reply.code(400).send({
-        error: "Position out of bounds",
-        details: `Row must be 0-${config.height - 1}, column must be 0-${config.width - 1}`,
-      });
-    }
-
-    const ok = game.toggleFlag({ row, col });
-    if (!ok) {
-      return reply.code(400).send({
-        error: "Cannot toggle flag",
-        details: "Cell may already be revealed",
-      });
-    }
-
-    reply.send({ ok, state: game.getGameState() });
-  },
-);
-
-// List all active games (IDs only) - requires admin key
-fastify.get(
-  "/api/games",
-  {
-    preHandler: requireAdminKey,
-  },
-  async (req: FastifyRequest, reply: FastifyReply) => {
-    reply.send({
-      ids: Object.keys(games),
-      total: Object.keys(games).length,
-      message: "Active game sessions",
+    const address = await fastify.listen({
+      port: Number(PORT),
+      host: "0.0.0.0",
     });
-  },
-);
 
-// CLI-style command endpoint: accepts commands like 'A1', 'F B2', 'Q', etc.
-fastify.post<{ Params: { id: string }; Body: { command: string } }>(
-  "/api/game/:id/command",
-  async (
-    req: FastifyRequest<{ Params: { id: string }; Body: { command: string } }>,
-    reply: FastifyReply,
-  ) => {
-    const game = games[req.params.id];
-    if (!game) return reply.code(404).send({ error: "Game not found" });
-
-    const input = req.body.command.trim();
-    let message = "";
-    let status = game.getGameState().status;
-    let ok = false;
-
-    // Parse command: 'F <coord>' to flag, '<coord>' to reveal
-    const flagMatch = input.match(/^F\s+([A-Z])(\d{1,2})$/i);
-    const revealMatch = input.match(/^([A-Z])(\d{1,2})$/i);
-    const quitMatch = input.match(/^Q$/i);
-
-    if (quitMatch) {
-      message = "Game quit.";
-      status = GameStatus.QUIT;
-    } else if (flagMatch) {
-      const col = flagMatch[1].toUpperCase().charCodeAt(0) - "A".charCodeAt(0);
-      const row = parseInt(flagMatch[2], 10) - 1;
-
-      // Validate position
-      const config = game.getConfig();
-      if (row < 0 || row >= config.height || col < 0 || col >= config.width) {
-        message = `Position ${flagMatch[1].toUpperCase()}${flagMatch[2]} is out of bounds. Valid range: A1-${String.fromCharCode(65 + config.width - 1)}${config.height}`;
-      } else {
-        ok = game.toggleFlag({ row, col });
-        message = ok
-          ? `Flag toggled at ${flagMatch[1].toUpperCase()}${flagMatch[2]}`
-          : `Cannot flag ${flagMatch[1].toUpperCase()}${flagMatch[2]} - cell may already be revealed`;
-      }
-      status = game.getGameState().status;
-    } else if (revealMatch) {
-      const col =
-        revealMatch[1].toUpperCase().charCodeAt(0) - "A".charCodeAt(0);
-      const row = parseInt(revealMatch[2], 10) - 1;
-
-      // Validate position
-      const config = game.getConfig();
-      if (row < 0 || row >= config.height || col < 0 || col >= config.width) {
-        message = `Position ${revealMatch[1].toUpperCase()}${revealMatch[2]} is out of bounds. Valid range: A1-${String.fromCharCode(65 + config.width - 1)}${config.height}`;
-      } else {
-        ok = game.revealCell({ row, col });
-        message = ok
-          ? `Revealed ${revealMatch[1].toUpperCase()}${revealMatch[2]}`
-          : `Cannot reveal ${revealMatch[1].toUpperCase()}${revealMatch[2]} - cell may already be revealed or flagged`;
-      }
-      status = game.getGameState().status;
-    } else if (input === "") {
-      // Empty command for initial board display
-      message = "Enter a command like A1 to reveal, F A1 to flag, or Q to quit";
-    } else {
-      const config = game.getConfig();
-      message = `Invalid command "${input}". Valid commands: A1-${String.fromCharCode(65 + config.width - 1)}${config.height} to reveal, F A1-${String.fromCharCode(65 + config.width - 1)}${config.height} to flag, Q to quit`;
-    }
-
-    // Always return the board in CLI-style text
-    const boardText = renderBoardText(game.getConfig(), game.getGameState());
-    reply.send({ boardText, message, status });
-  },
-);
-
-fastify.listen(
-  { port: Number(PORT), host: "0.0.0.0" },
-  (err: Error | null, address: string) => {
-    if (err) {
-      fastify.log.error(err);
-      process.exit(1);
-    }
     fastify.log.info(`Server listening at ${address}`);
-  },
-);
+    fastify.log.info(`MCP SSE server available at ${address}/mcp/sse`);
+    fastify.log.info(`MCP debug endpoint available at ${address}/mcp/tools`);
+    console.log(`\n🎮 Minesweeper Server Ready!`);
+    console.log(`📍 Web UI: ${address}`);
+    console.log(`🔌 MCP Endpoint: ${address}/mcp/sse`);
+    console.log(`🐛 Debug Tools: ${address}/mcp/tools`);
+  } catch (err) {
+    fastify.log.error(err);
+    process.exit(1);
+  }
+}
+
+startServer();

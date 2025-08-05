@@ -1,6 +1,6 @@
 # Minesweeper CLI & Web
 
-A full-featured Minesweeper game with both command-line interface and web-based gameplay, built with Node.js and TypeScript. Features a clean HTML/JavaScript frontend for easy deployment.
+A full-featured Minesweeper game with both command-line interface and web-based gameplay, built with Node.js and TypeScript. Features a clean HTML/JavaScript frontend for easy deployment and Model Context Protocol (MCP) integration for AI assistant interactions.
 
 ## Features
 
@@ -14,6 +14,7 @@ A full-featured Minesweeper game with both command-line interface and web-based 
 - **API Authorization**: Protected admin endpoints with admin key authentication
 - **Docker support**: Containerized deployment
 - **Simple frontend**: Pure HTML/CSS/JavaScript - no build process required
+- **MCP Integration**: Model Context Protocol support for AI assistant interactions
 
 ## Quick Start
 
@@ -80,16 +81,21 @@ The web server provides both a web interface and REST API:
 ```bash
 pnpm dev:server:watch    # Auto-reload on changes
 pnpm dev:server          # Single run
+PORT=8081 pnpm dev:server # Custom port 8081
 ```
 
 **Production:**
 ```bash
 pnpm build
 pnpm start:server
+pnpm start:server # With custom port
 ```
 
-**Endpoints:**
-- `GET /` - Web interface
+**Web Endpoints:**
+- `GET /` - Game interface (play Minesweeper in browser)
+- `GET /mcp` - MCP integration documentation and setup
+
+**API Endpoints:**
 - `GET /api/health` - Health check
 - `POST /api/game` - Create new game
 - `GET /api/games` - List all active games (IDs only) - requires admin key
@@ -97,6 +103,11 @@ pnpm start:server
 - `POST /api/game/:id/reveal` - Reveal cell
 - `POST /api/game/:id/flag` - Toggle flag
 - `POST /api/game/:id/command` - CLI-style commands
+
+**MCP Endpoints:**
+- `GET /mcp/sse` - Server-Sent Events transport for MCP clients
+- `POST /mcp/messages` - Message handling for SSE transport
+- `GET /mcp/tools` - Debug endpoint listing available MCP tools
 
 ### 🖥️ CLI Mode
 
@@ -222,7 +233,40 @@ curl -X POST http://localhost:3000/api/game/{gameId}/command \
 curl -H "X-Admin-Key: minesweeper-admin-key" http://localhost:8080/api/games
 ```
 
-> **Note**: The `/api/games` endpoint requires admin key authentication. See [API_AUTHORIZATION.md](API_AUTHORIZATION.md) for detailed authorization documentation.
+> **Note**: The `/api/games` endpoint requires admin key authentication. Provide the admin key via the `X-Admin-Key` or `Authorization` header.
+
+## MCP (Model Context Protocol) Integration
+
+This server supports the Model Context Protocol, allowing AI assistants to interact with the Minesweeper game using natural language. All API endpoints are automatically exposed as MCP tools.
+
+### Quick Setup
+
+1. **Start the server**: `pnpm run dev:server`
+2. **Visit MCP page**: Open `http://localhost:8080/mcp` for setup instructions
+3. **Configure your AI client** with the SSE endpoint: `http://localhost:8080/mcp/sse`
+
+**Available MCP Tools:**
+- `createGame` - Create new Minesweeper game
+- `getGameState` - Get current game state
+- `revealCell` - Reveal a cell at specified coordinates
+- `flagCell` - Flag/unflag a cell
+- `executeCommand` - Run text commands like "reveal 3 4"
+- `getHealth` - Check server health
+- `listGames` - List all games (admin only)
+
+**Example AI Interactions:**
+- "Create a 10x10 minesweeper game with 20% bombs"
+- "Reveal the cell at row 5, column 3"
+- "Flag the cell at position (2, 7)"
+- "Show me the current game state"
+
+**Quick Verification:**
+```bash
+# Check if MCP tools are available
+curl http://localhost:8080/mcp/tools
+```
+
+For detailed setup instructions, client configuration examples, and troubleshooting, visit the **MCP Integration page** at `http://localhost:8080/mcp` or see [MCP.md](./MCP.md).
 
 ## Example Game Flow (CLI)
 
@@ -305,6 +349,7 @@ data/                  # Game data storage (if needed)
 - ✅ Development and production modes
 - ✅ Inline HTML/JS frontend (no build process or separate files required)
 - ✅ Responsive web design with mobile support
+- ✅ Model Context Protocol (MCP) integration for AI assistant interactions
 
 ## Troubleshooting
 
