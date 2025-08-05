@@ -17,11 +17,11 @@ export class MinesweeperCLI {
    */
   public async start(): Promise<void> {
     console.log("\n🎮 Welcome to Minesweeper CLI! 🎮\n");
-    cliLogger.debug('Starting Minesweeper CLI application');
+    cliLogger.debug("Starting Minesweeper CLI application");
 
     try {
       const config = await this.getGameConfiguration();
-      cliLogger.debug('Game configuration received', { config });
+      cliLogger.debug("Game configuration received", { config });
       this.game = new MinesweeperGame(config);
 
       console.log(
@@ -44,24 +44,44 @@ export class MinesweeperCLI {
     console.log("⚙️  Game Configuration");
     console.log("=".repeat(20));
 
-    // Get grid width
-    const widthStr = await this.rl.question("Enter grid width (e.g., 10): ");
-    const width = this.validateNumber(widthStr, 3, 50, "width");
+    // Use environment variables as defaults if available
+    const defaultWidth = process.env.DEFAULT_WIDTH
+      ? parseInt(process.env.DEFAULT_WIDTH)
+      : undefined;
+    const defaultHeight = process.env.DEFAULT_HEIGHT
+      ? parseInt(process.env.DEFAULT_HEIGHT)
+      : undefined;
+    const defaultBombPercentage = process.env.DEFAULT_BOMB_PERCENTAGE
+      ? parseFloat(process.env.DEFAULT_BOMB_PERCENTAGE)
+      : undefined;
 
-    // Get grid height
-    const heightStr = await this.rl.question("Enter grid height (e.g., 10): ");
-    const height = this.validateNumber(heightStr, 3, 50, "height");
+    const widthPrompt = "Enter grid width (e.g., 10): ";
+    const heightPrompt = "Enter grid height (e.g., 10): ";
+    const bombPrompt = "Enter bomb percentage (e.g., 15.5): ";
 
-    // Get bomb percentage
-    const bombPercentageStr = await this.rl.question(
-      "Enter bomb percentage (e.g., 15.5): "
-    );
-    const bombPercentage = this.validateNumber(
-      bombPercentageStr,
-      5,
-      40,
-      "bomb percentage"
-    );
+    const width = defaultWidth
+      ? defaultWidth
+      : await this.getValidatedInput(widthPrompt, (input) =>
+          this.validateNumber(input, 3, 50, "width", defaultWidth)
+        );
+
+    const height = defaultHeight
+      ? defaultHeight
+      : await this.getValidatedInput(heightPrompt, (input) =>
+          this.validateNumber(input, 3, 50, "height", defaultHeight)
+        );
+
+    const bombPercentage = defaultBombPercentage
+      ? defaultBombPercentage
+      : await this.getValidatedInput(bombPrompt, (input) =>
+          this.validateNumber(
+            input,
+            5,
+            40,
+            "bomb percentage",
+            defaultBombPercentage
+          )
+        );
 
     return {
       width,
@@ -77,15 +97,36 @@ export class MinesweeperCLI {
     input: string,
     min: number,
     max: number,
-    fieldName: string
+    fieldName: string,
+    defaultValue?: number
   ): number {
     const num = parseFloat(input.trim());
     if (isNaN(num) || num < min || num > max) {
+      if (defaultValue !== undefined) {
+        return defaultValue;
+      }
       throw new Error(
         `Invalid ${fieldName}. Please enter a number between ${min} and ${max}.`
       );
     }
     return num;
+  }
+
+  /**
+   * Get validated input from user
+   */
+  private async getValidatedInput(
+    prompt: string,
+    validator: (input: string) => number
+  ): Promise<number> {
+    while (true) {
+      const input = (await this.rl.question(prompt)).trim();
+      try {
+        return validator(input);
+      } catch (error) {
+        console.log(error.message);
+      }
+    }
   }
 
   /**
