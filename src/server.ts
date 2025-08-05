@@ -68,6 +68,7 @@ fastify.get("/", async (req: FastifyRequest, reply: FastifyReply) => {
             <a href="/">Game</a>
             <a href="/mcp">MCP Integration</a>
             <a href="/api/health">API Health</a>
+            <a href="/documentation" target="_blank">API Docs</a>
         </div>
 
         <div class="game-controls">
@@ -253,6 +254,7 @@ fastify.get("/mcp", async (req: FastifyRequest, reply: FastifyReply) => {
         .method { display: inline-block; padding: 4px 8px; border-radius: 3px; color: white; font-weight: bold; margin-right: 10px; }
         .get { background: #28a745; }
         .post { background: #007bff; }
+        .method[class*="TOOL"] { background: #6f42c1; }
         .path { font-family: 'Courier New', monospace; color: #495057; }
         .description { margin-top: 5px; color: #6c757d; font-size: 0.9em; }
         pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; margin: 10px 0; }
@@ -271,6 +273,7 @@ fastify.get("/mcp", async (req: FastifyRequest, reply: FastifyReply) => {
             <a href="/">Game</a>
             <a href="/mcp">MCP Integration</a>
             <a href="/api/health">API Health</a>
+            <a href="/documentation" target="_blank">API Docs</a>
         </div>
 
         <div class="api-section mcp-info">
@@ -295,48 +298,54 @@ fastify.get("/mcp", async (req: FastifyRequest, reply: FastifyReply) => {
 
         <div class="api-section">
             <h2>🎮 Available MCP Tools</h2>
-            <p>These API endpoints are automatically available as MCP tools:</p>
+            <p>These tools are automatically available when connected via MCP:</p>
 
             <div class="endpoint">
                 <span class="method post">POST</span>
-                <span class="path">/api/game</span>
+                <span class="path">createGame</span>
                 <div class="description">Create a new Minesweeper game with custom dimensions and bomb percentage</div>
             </div>
 
             <div class="endpoint">
                 <span class="method get">GET</span>
-                <span class="path">/api/game/:id</span>
+                <span class="path">getGameState</span>
                 <div class="description">Get the current state of a specific game</div>
             </div>
 
             <div class="endpoint">
                 <span class="method post">POST</span>
-                <span class="path">/api/game/:id/reveal</span>
+                <span class="path">revealCell</span>
                 <div class="description">Reveal a cell at the specified row and column</div>
             </div>
 
             <div class="endpoint">
                 <span class="method post">POST</span>
-                <span class="path">/api/game/:id/flag</span>
+                <span class="path">flagCell</span>
                 <div class="description">Flag or unflag a cell at the specified position</div>
             </div>
 
             <div class="endpoint">
                 <span class="method post">POST</span>
-                <span class="path">/api/game/:id/quit</span>
+                <span class="path">quitGame</span>
                 <div class="description">End the current game session gracefully</div>
             </div>
 
             <div class="endpoint">
                 <span class="method post">POST</span>
-                <span class="path">/api/game/:id/command</span>
-                <div class="description">Execute text commands like "reveal 3 4" or "flag 2 5"</div>
+                <span class="path">executeCommand</span>
+                <div class="description">Execute text commands like "reveal A1" or "flag B3"</div>
             </div>
 
             <div class="endpoint">
                 <span class="method get">GET</span>
-                <span class="path">/api/health</span>
+                <span class="path">getHealth</span>
                 <div class="description">Check server health and status</div>
+            </div>
+
+            <div class="endpoint">
+                <span class="method get">GET</span>
+                <span class="path">listGames</span>
+                <div class="description">List all active game sessions (admin only)</div>
             </div>
         </div>
 
@@ -358,6 +367,7 @@ fastify.get("/mcp", async (req: FastifyRequest, reply: FastifyReply) => {
             <ul>
                 <li><a href="/mcp/sse" target="_blank">MCP SSE Endpoint</a></li>
                 <li><a href="/mcp/tools" target="_blank">Debug: Available Tools</a></li>
+                <li><a href="/documentation" target="_blank">API Swagger Documentation</a></li>
                 <li><a href="/api/health" target="_blank">API Health Check</a></li>
                 <li><a href="https://github.com/AdirAmsalem/mcp-it" target="_blank">@mcp-it/fastify Plugin</a></li>
             </ul>
