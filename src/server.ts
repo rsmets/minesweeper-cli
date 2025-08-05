@@ -93,7 +93,12 @@ fastify.get("/", async (req, reply) => {
             const height = parseInt(document.getElementById('height').value);
             const bombPercentage = parseFloat(document.getElementById('bombPercentage').value);
             if (width < 3 || width > 50 || height < 3 || height > 50 || bombPercentage < 5 || bombPercentage > 40) {
-                showMessage('Invalid configuration. Please check your values.', 'error');
+                let errorMsg = 'Invalid configuration: ';
+                const errors = [];
+                if (width < 3 || width > 50) errors.push('Width must be 3-50');
+                if (height < 3 || height > 50) errors.push('Height must be 3-50');
+                if (bombPercentage < 5 || bombPercentage > 40) errors.push('Bombs must be 5-40%');
+                showMessage(errorMsg + errors.join(', '), 'error');
                 setLoading(false);
                 return;
             }
@@ -103,7 +108,13 @@ fastify.get("/", async (req, reply) => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ width, height, bombPercentage })
                 });
-                if (!response.ok) throw new Error('Failed to create game');
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    const errorMsg = errorData.details ?
+                        'Configuration error: ' + errorData.details.join(', ') :
+                        'Failed to create game';
+                    throw new Error(errorMsg);
+                }
                 const data = await response.json();
                 gameId = data.id;
                 gameActive = true;
@@ -247,6 +258,38 @@ fastify.get("/api/debug", async (_req, _reply) => {
 // Create new game
 fastify.post<{ Body: GameConfig }>("/api/game", async (req, reply) => {
   const config = req.body;
+
+  // Validate configuration
+  const errors: string[] = [];
+
+  if (!config.width || config.width < 3 || config.width > 50) {
+    errors.push("Width must be between 3 and 50");
+  }
+
+  if (!config.height || config.height < 3 || config.height > 50) {
+    errors.push("Height must be between 3 and 50");
+  }
+
+  if (
+    !config.bombPercentage ||
+    config.bombPercentage < 5 ||
+    config.bombPercentage > 40
+  ) {
+    errors.push("Bomb percentage must be between 5% and 40%");
+  }
+
+  if (errors.length > 0) {
+    return reply.code(400).send({
+      error: "Invalid configuration",
+      details: errors,
+      validRanges: {
+        width: "3-50",
+        height: "3-50",
+        bombPercentage: "5-40",
+      },
+    });
+  }
+
   const id = randomUUID();
   games[id] = new MinesweeperGame(config);
   reply.code(201).send({ id });
@@ -269,8 +312,33 @@ fastify.post<{ Params: { id: string }; Body: Position }>(
   async (req, reply) => {
     const game = games[req.params.id];
     if (!game) return reply.code(404).send({ error: "Game not found" });
+
     const { row, col } = req.body as Position;
+
+    // Validate position
+    if (typeof row !== "number" || typeof col !== "number") {
+      return reply.code(400).send({
+        error: "Invalid position",
+        details: "Row and column must be numbers",
+      });
+    }
+
+    const config = game.getConfig();
+    if (row < 0 || row >= config.height || col < 0 || col >= config.width) {
+      return reply.code(400).send({
+        error: "Position out of bounds",
+        details: `Row must be 0-${config.height - 1}, column must be 0-${config.width - 1}`,
+      });
+    }
+
     const ok = game.revealCell({ row, col });
+    if (!ok) {
+      return reply.code(400).send({
+        error: "Cannot reveal cell",
+        details: "Cell may already be revealed or flagged",
+      });
+    }
+
     reply.send({ ok, state: game.getGameState() });
   },
 );
@@ -281,8 +349,33 @@ fastify.post<{ Params: { id: string }; Body: Position }>(
   async (req, reply) => {
     const game = games[req.params.id];
     if (!game) return reply.code(404).send({ error: "Game not found" });
+
     const { row, col } = req.body as Position;
+
+    // Validate position
+    if (typeof row !== "number" || typeof col !== "number") {
+      return reply.code(400).send({
+        error: "Invalid position",
+        details: "Row and column must be numbers",
+      });
+    }
+
+    const config = game.getConfig();
+    if (row < 0 || row >= config.height || col < 0 || col >= config.width) {
+      return reply.code(400).send({
+        error: "Position out of bounds",
+        details: `Row must be 0-${config.height - 1}, column must be 0-${config.width - 1}`,
+      });
+    }
+
     const ok = game.toggleFlag({ row, col });
+    if (!ok) {
+      return reply.code(400).send({
+        error: "Cannot toggle flag",
+        details: "Cell may already be revealed",
+      });
+    }
+
     reply.send({ ok, state: game.getGameState() });
   },
 );
@@ -298,6 +391,7 @@ fastify.post<{ Params: { id: string }; Body: { command: string } }>(
   async (req, reply) => {
     const game = games[req.params.id];
     if (!game) return reply.code(404).send({ error: "Game not found" });
+
     const input = req.body.command.trim();
     let message = "";
     let status = game.getGameState().status;
@@ -314,22 +408,40 @@ fastify.post<{ Params: { id: string }; Body: { command: string } }>(
     } else if (flagMatch) {
       const col = flagMatch[1].toUpperCase().charCodeAt(0) - "A".charCodeAt(0);
       const row = parseInt(flagMatch[2], 10) - 1;
-      ok = game.toggleFlag({ row, col });
-      message = ok
-        ? `Flag toggled at ${flagMatch[1].toUpperCase()}${flagMatch[2]}`
-        : "Invalid flag action.";
+
+      // Validate position
+      const config = game.getConfig();
+      if (row < 0 || row >= config.height || col < 0 || col >= config.width) {
+        message = `Position ${flagMatch[1].toUpperCase()}${flagMatch[2]} is out of bounds. Valid range: A1-${String.fromCharCode(65 + config.width - 1)}${config.height}`;
+      } else {
+        ok = game.toggleFlag({ row, col });
+        message = ok
+          ? `Flag toggled at ${flagMatch[1].toUpperCase()}${flagMatch[2]}`
+          : `Cannot flag ${flagMatch[1].toUpperCase()}${flagMatch[2]} - cell may already be revealed`;
+      }
       status = game.getGameState().status;
     } else if (revealMatch) {
       const col =
         revealMatch[1].toUpperCase().charCodeAt(0) - "A".charCodeAt(0);
       const row = parseInt(revealMatch[2], 10) - 1;
-      ok = game.revealCell({ row, col });
-      message = ok
-        ? `Revealed ${revealMatch[1].toUpperCase()}${revealMatch[2]}`
-        : "Invalid reveal action.";
+
+      // Validate position
+      const config = game.getConfig();
+      if (row < 0 || row >= config.height || col < 0 || col >= config.width) {
+        message = `Position ${revealMatch[1].toUpperCase()}${revealMatch[2]} is out of bounds. Valid range: A1-${String.fromCharCode(65 + config.width - 1)}${config.height}`;
+      } else {
+        ok = game.revealCell({ row, col });
+        message = ok
+          ? `Revealed ${revealMatch[1].toUpperCase()}${revealMatch[2]}`
+          : `Cannot reveal ${revealMatch[1].toUpperCase()}${revealMatch[2]} - cell may already be revealed or flagged`;
+      }
       status = game.getGameState().status;
+    } else if (input === "") {
+      // Empty command for initial board display
+      message = "Enter a command like A1 to reveal, F A1 to flag, or Q to quit";
     } else {
-      message = "Unknown command. Use e.g. 'A1', 'F B2', or 'Q'.";
+      const config = game.getConfig();
+      message = `Invalid command "${input}". Valid commands: A1-${String.fromCharCode(65 + config.width - 1)}${config.height} to reveal, F A1-${String.fromCharCode(65 + config.width - 1)}${config.height} to flag, Q to quit`;
     }
 
     // Always return the board in CLI-style text

@@ -21,9 +21,9 @@ A full-featured Minesweeper game with both command-line interface and web-based 
 **Using Docker:**
 ```bash
 docker build -t minesweeper-web .
-docker run -p 3000:3000 --rm minesweeper-web
+docker run -p 8080:8080 --rm minesweeper-web
 ```
-Then open http://localhost:3000 in your browser.
+Then open http://localhost:8080 in your browser.
 
 **Local Development:**
 ```bash
@@ -117,7 +117,7 @@ pnpm start               # Runs the CLI game
 When you start the game, you'll be prompted to configure:
 
 1. **Grid Width**: Number of columns (3-50)
-2. **Grid Height**: Number of rows (3-50) 
+2. **Grid Height**: Number of rows (3-50)
 3. **Bomb Percentage**: Percentage of cells containing bombs (5-40%)
 
 ## Game Commands (CLI)
@@ -227,15 +227,15 @@ Enter bomb percentage (e.g., 15.5): 12.5
 📋 Commands: [coordinate] to reveal, F [coordinate] to flag, Q to quit
 
 ====================================
-    A  B  C  D  E  F  G  H 
- 1  .  .  .  .  .  .  .  . 
- 2  .  .  .  .  .  .  .  . 
- 3  .  .  .  .  .  .  .  . 
- 4  .  .  .  .  .  .  .  . 
- 5  .  .  .  .  .  .  .  . 
- 6  .  .  .  .  .  .  .  . 
- 7  .  .  .  .  .  .  .  . 
- 8  .  .  .  .  .  .  .  . 
+    A  B  C  D  E  F  G  H
+ 1  .  .  .  .  .  .  .  .
+ 2  .  .  .  .  .  .  .  .
+ 3  .  .  .  .  .  .  .  .
+ 4  .  .  .  .  .  .  .  .
+ 5  .  .  .  .  .  .  .  .
+ 6  .  .  .  .  .  .  .  .
+ 7  .  .  .  .  .  .  .  .
+ 8  .  .  .  .  .  .  .  .
 ====================================
 
 Enter command: A1
@@ -282,18 +282,18 @@ data/                  # Game data storage (if needed)
 
 ## Requirements Implemented
 
-✅ Grid of arbitrary dimensions  
-✅ Configurable bomb percentage  
-✅ Two bomb population modes (before/after first click)  
-✅ Terminal-based interface with text coordinates (A1, B2, etc.)  
-✅ Web-based interface with REST API  
-✅ Bomb detection and game over logic  
-✅ Adjacent bomb counting  
-✅ Recursive reveal for empty cells (flood fill)  
-✅ Flag functionality for marking suspected bombs  
-✅ Docker containerization  
-✅ Development and production modes  
-✅ Inline HTML/JS frontend (no build process or separate files required)  
+✅ Grid of arbitrary dimensions
+✅ Configurable bomb percentage
+✅ Two bomb population modes (before/after first click)
+✅ Terminal-based interface with text coordinates (A1, B2, etc.)
+✅ Web-based interface with REST API
+✅ Bomb detection and game over logic
+✅ Adjacent bomb counting
+✅ Recursive reveal for empty cells (flood fill)
+✅ Flag functionality for marking suspected bombs
+✅ Docker containerization
+✅ Development and production modes
+✅ Inline HTML/JS frontend (no build process or separate files required)
 ✅ Responsive web design with mobile support
 
 ## Troubleshooting
@@ -301,10 +301,10 @@ data/                  # Game data storage (if needed)
 ### Port Already in Use
 ```bash
 # Check what's using port 3000
-lsof -i :3000
+lsof -i :8080
 
 # Use a different port
-docker run -p 8080:3000 --rm minesweeper-web
+docker run -p 8081:8080 --rm minesweeper-web
 ```
 
 ### Docker Build Issues
