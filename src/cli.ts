@@ -2,6 +2,7 @@ import { Interface, createInterface } from "readline/promises";
 import { stdin as input, stdout as output } from "process";
 import { MinesweeperGame } from "./game";
 import { GameConfig, Position, CellState, GameStatus } from "./types";
+import { cliLogger } from "./logger";
 
 export class MinesweeperCLI {
   private game: MinesweeperGame | null = null;
@@ -16,9 +17,11 @@ export class MinesweeperCLI {
    */
   public async start(): Promise<void> {
     console.log("\n🎮 Welcome to Minesweeper CLI! 🎮\n");
+    cliLogger.debug('Starting Minesweeper CLI application');
 
     try {
       const config = await this.getGameConfiguration();
+      cliLogger.debug('Game configuration received', { config });
       this.game = new MinesweeperGame(config);
 
       console.log(

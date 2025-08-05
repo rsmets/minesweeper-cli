@@ -14,7 +14,7 @@ node_modules/
 # Logs
 logs
 *.log
-npm-debug.log*
+pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
@@ -35,8 +35,8 @@ coverage/
 # Dependency directories
 jspm_packages/
 
-# Optional npm cache directory
-.npm
+# Optional pnpm cache directory
+.pnpm
 
 # Optional eslint cache
 .eslintcache
@@ -44,7 +44,7 @@ jspm_packages/
 # Optional REPL history
 .node_repl_history
 
-# Output of 'npm pack'
+# Output of 'pnpm pack'
 *.tgz
 
 # Yarn Integrity file
