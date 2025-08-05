@@ -19,7 +19,7 @@ export class MinesweeperGame {
    * @param config - Game configuration including grid dimensions and bomb percentage
    */
   constructor(config: GameConfig) {
-    gameLogger.debug('Initializing new MinesweeperGame', { config });
+    gameLogger.debug("Initializing new MinesweeperGame", { config });
     this.config = config;
     this.state = {
       grid: this.initializeGrid(),
@@ -38,7 +38,7 @@ export class MinesweeperGame {
     // Always generate bombs during initialization
     this.placeBombs();
     this.calculateAdjacentBombs();
-    gameLogger.debug('MinesweeperGame initialization complete');
+    gameLogger.debug("MinesweeperGame initialization complete");
   }
 
   /**
@@ -73,8 +73,12 @@ export class MinesweeperGame {
     const totalBombs = Math.floor(
       (totalCells * this.config.bombPercentage) / 100
     );
-    
-    gameLogger.debug('Placing bombs', { totalCells, totalBombs, bombPercentage: this.config.bombPercentage });
+
+    gameLogger.debug("Placing bombs", {
+      totalCells,
+      totalBombs,
+      bombPercentage: this.config.bombPercentage,
+    });
 
     // Flattened array of all available positions
     const availablePositions: Position[] = [];
@@ -96,10 +100,12 @@ export class MinesweeperGame {
 
       // Mark the selected position as a bomb in the game state grid
       this.state.grid[bombPos.row][bombPos.col].isBomb = true;
-      gameLogger.trace('Bomb placed at position', { position: bombPos });
+      gameLogger.trace("Bomb placed at position", { position: bombPos });
     }
-    
-    gameLogger.debug('Bomb placement complete', { totalBombsPlaced: totalBombs });
+
+    gameLogger.debug("Bomb placement complete", {
+      totalBombsPlaced: totalBombs,
+    });
   }
 
   /**
@@ -180,13 +186,16 @@ export class MinesweeperGame {
    * @returns true if the action was successful, false if invalid
    */
   public revealCell(pos: Position): boolean {
-    gameLogger.debug('Attempting to reveal cell', { position: pos });
-    
+    gameLogger.debug("Attempting to reveal cell", { position: pos });
+
     if (
       !this.isValidPosition(pos) ||
       this.state.status !== GameStatus.PLAYING
     ) {
-      gameLogger.trace('Cell reveal failed - invalid position or game not playing', { position: pos, gameStatus: this.state.status });
+      gameLogger.trace(
+        "Cell reveal failed - invalid position or game not playing",
+        { position: pos, gameStatus: this.state.status }
+      );
       return false;
     }
 
@@ -199,7 +208,7 @@ export class MinesweeperGame {
 
     // Check if clicked on bomb
     if (cell.isBomb) {
-      gameLogger.debug('Player hit a bomb - game over', { position: pos });
+      gameLogger.debug("Player hit a bomb - game over", { position: pos });
       this.state.status = GameStatus.LOST;
       this.revealAllBombs();
       return true;
