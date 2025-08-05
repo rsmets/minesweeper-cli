@@ -1,14 +1,12 @@
 import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
 import path from "path";
-import { fileURLToPath } from "url";
 import { MinesweeperGame } from "./game";
 import { renderBoardText } from "./serverBoardText";
-import { GameConfig, Position } from "./types";
+import { GameConfig, Position, GameStatus } from "./types";
 import { randomUUID } from "crypto";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// __dirname is available in CommonJS
 
 const fastify = Fastify({ logger: true });
 
@@ -51,10 +49,10 @@ fastify.post<{ Params: { id: string }; Body: Position }>(
   async (req, reply) => {
     const game = games[req.params.id];
     if (!game) return reply.code(404).send({ error: "Game not found" });
-    const { row, col } = req.body;
+    const { row, col } = req.body as Position;
     const ok = game.revealCell({ row, col });
     reply.send({ ok, state: game.getGameState() });
-  }
+  },
 );
 
 // Toggle flag
@@ -63,10 +61,10 @@ fastify.post<{ Params: { id: string }; Body: Position }>(
   async (req, reply) => {
     const game = games[req.params.id];
     if (!game) return reply.code(404).send({ error: "Game not found" });
-    const { row, col } = req.body;
+    const { row, col } = req.body as Position;
     const ok = game.toggleFlag({ row, col });
     reply.send({ ok, state: game.getGameState() });
-  }
+  },
 );
 
 // List all active games (IDs only)
@@ -92,18 +90,23 @@ fastify.post<{ Params: { id: string }; Body: { command: string } }>(
 
     if (quitMatch) {
       message = "Game quit.";
-      status = "QUIT";
+      status = GameStatus.QUIT;
     } else if (flagMatch) {
       const col = flagMatch[1].toUpperCase().charCodeAt(0) - "A".charCodeAt(0);
       const row = parseInt(flagMatch[2], 10) - 1;
       ok = game.toggleFlag({ row, col });
-      message = ok ? `Flag toggled at ${flagMatch[1].toUpperCase()}${flagMatch[2]}` : "Invalid flag action.";
+      message = ok
+        ? `Flag toggled at ${flagMatch[1].toUpperCase()}${flagMatch[2]}`
+        : "Invalid flag action.";
       status = game.getGameState().status;
     } else if (revealMatch) {
-      const col = revealMatch[1].toUpperCase().charCodeAt(0) - "A".charCodeAt(0);
+      const col =
+        revealMatch[1].toUpperCase().charCodeAt(0) - "A".charCodeAt(0);
       const row = parseInt(revealMatch[2], 10) - 1;
       ok = game.revealCell({ row, col });
-      message = ok ? `Revealed ${revealMatch[1].toUpperCase()}${revealMatch[2]}` : "Invalid reveal action.";
+      message = ok
+        ? `Revealed ${revealMatch[1].toUpperCase()}${revealMatch[2]}`
+        : "Invalid reveal action.";
       status = game.getGameState().status;
     } else {
       message = "Unknown command. Use e.g. 'A1', 'F B2', or 'Q'.";
@@ -112,7 +115,7 @@ fastify.post<{ Params: { id: string }; Body: { command: string } }>(
     // Always return the board in CLI-style text
     const boardText = renderBoardText(game.getConfig(), game.getGameState());
     reply.send({ boardText, message, status });
-  }
+  },
 );
 
 const port = process.env.PORT || 3000;

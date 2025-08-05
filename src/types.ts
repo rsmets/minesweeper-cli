@@ -24,7 +24,8 @@ export interface Cell {
 }
 
 export enum GameStatus {
-  PLAYING = 'PLAYING',
+  PLAYING = "PLAYING",
+  QUIT = "QUIT",
   WON = 'WON',
   LOST = 'LOST'
 }
