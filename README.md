@@ -254,7 +254,7 @@ This server supports the Model Context Protocol, allowing AI assistants to inter
 
 **Available MCP Tools:**
 - `createGame` - Create new Minesweeper game
-- `getGameState` - Get current game state  
+- `getGameState` - Get current game state
 - `revealCell` - Reveal a cell at specified coordinates
 - `flagCell` - Flag/unflag a cell
 - `quitGame` - End the current game session
@@ -343,8 +343,6 @@ data/                  # Game data storage (if needed)
 - `PORT`: Web server port (default: `8080`)
 - `ADMIN_KEY`: Admin key for protected endpoints (optional)
 - `NODE_ENV`: Environment mode (default: `production` in Docker)
-  - `development`: Allows CORS from all origins (needed for local MCP testing)
-  - `production`: Restricts CORS to known MCP clients (Claude, Cursor)
 
 ## Requirements Implemented
 
