@@ -4,15 +4,15 @@ import { renderBoardText } from "./serverBoardText";
 import { GameConfig, Position, GameStatus } from "./types";
 import { randomUUID } from "crypto";
 
-// Environment variables:
-// - PORT: Server port (default: 8080)
-// - ADMIN_KEY: Admin key for protected endpoints (default: "minesweeper-admin-key")
-
 const fastify = Fastify({ logger: true });
 
-// Authorization middleware
-const ADMIN_KEY = process.env.ADMIN_KEY || "minesweeper-admin-key";
+// Environment variables:
+// - PORT: Server port (default: 8080)
+// - ADMIN_KEY: Admin key for protected endpoints
+const PORT = process.env.PORT || 8080;
+const ADMIN_KEY = process.env.ADMIN_KEY;
 
+// Authorization middleware
 // Fastify preHandler hook for admin authentication
 const requireAdminKey = async (req: FastifyRequest, reply: FastifyReply) => {
   const adminKey = req.headers["x-admin-key"] || req.headers["authorization"];
@@ -397,7 +397,7 @@ fastify.post<{ Params: { id: string }; Body: Position }>(
   },
 );
 
-// List all active games (IDs only) - requires API key
+// List all active games (IDs only) - requires admin key
 fastify.get(
   "/api/games",
   {
@@ -480,10 +480,8 @@ fastify.post<{ Params: { id: string }; Body: { command: string } }>(
   },
 );
 
-const port = process.env.PORT || 8080;
-
 fastify.listen(
-  { port: Number(port), host: "0.0.0.0" },
+  { port: Number(PORT), host: "0.0.0.0" },
   (err: Error | null, address: string) => {
     if (err) {
       fastify.log.error(err);
