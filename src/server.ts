@@ -16,12 +16,143 @@ const games: Record<string, MinesweeperGame> = {};
 // Serve static frontend
 fastify.register(fastifyStatic, {
   root: path.join(__dirname, "../frontend/dist"),
-  prefix: "/",
+  prefix: "/static/",
+});
+
+// Serve index.html at root with fallback
+fastify.get("/", async (req, reply) => {
+  const fs = require("fs");
+  const indexPath = path.join(__dirname, "../frontend/dist/index.html");
+
+  try {
+    if (fs.existsSync(indexPath)) {
+      const html = fs.readFileSync(indexPath, "utf8");
+      reply.type("text/html").send(html);
+    } else {
+      // Inline HTML fallback if file doesn't exist
+      reply.type("text/html").send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minesweeper Web</title>
+    <style>
+        body { font-family: monospace; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; }
+        .container { background: rgba(255,255,255,0.95); border-radius: 15px; padding: 30px; max-width: 800px; width: 100%; }
+        h1 { text-align: center; color: #333; margin-bottom: 20px; }
+        .board { background: #1a1a1a; color: #00ff00; padding: 20px; border-radius: 10px; font-family: monospace; white-space: pre; text-align: center; min-height: 200px; }
+        .controls { display: flex; gap: 10px; margin: 20px 0; justify-content: center; }
+        input, button { padding: 10px; border-radius: 5px; }
+        button { background: #667eea; color: white; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Minesweeper Web 💣</h1>
+        <div class="controls">
+            <input type="number" id="width" value="10" placeholder="Width">
+            <input type="number" id="height" value="10" placeholder="Height">
+            <input type="number" id="bombs" value="15" placeholder="Bombs %">
+            <button onclick="createGame()">New Game</button>
+        </div>
+        <div id="board" class="board">Click "New Game" to start!</div>
+        <div class="controls">
+            <input type="text" id="command" placeholder="Enter command (A1, F B2, Q)">
+            <button onclick="sendCommand()">Send</button>
+        </div>
+        <div id="message" style="text-align: center; margin: 10px; color: red;"></div>
+    </div>
+    <script>
+        let gameId = '';
+        async function createGame() {
+            const width = document.getElementById('width').value || 10;
+            const height = document.getElementById('height').value || 10;
+            const bombPercentage = document.getElementById('bombs').value || 15;
+            try {
+                const res = await fetch('/api/game', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({width: +width, height: +height, bombPercentage: +bombPercentage})
+                });
+                const data = await res.json();
+                gameId = data.id;
+                await updateBoard();
+                document.getElementById('message').textContent = 'Game created! Enter commands like A1, F B2, etc.';
+            } catch(e) {
+                document.getElementById('message').textContent = 'Error: ' + e.message;
+            }
+        }
+        async function sendCommand() {
+            const command = document.getElementById('command').value.trim();
+            if (!command || !gameId) return;
+            try {
+                const res = await fetch(\`/api/game/\${gameId}/command\`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({command})
+                });
+                const data = await res.json();
+                document.getElementById('board').textContent = data.boardText || '';
+                document.getElementById('message').textContent = data.message || '';
+                document.getElementById('command').value = '';
+            } catch(e) {
+                document.getElementById('message').textContent = 'Error: ' + e.message;
+            }
+        }
+        async function updateBoard() {
+            if (!gameId) return;
+            try {
+                const res = await fetch(\`/api/game/\${gameId}/command\`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({command: ''})
+                });
+                const data = await res.json();
+                document.getElementById('board').textContent = data.boardText || '';
+            } catch(e) { console.error(e); }
+        }
+        document.getElementById('command').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendCommand();
+        });
+        window.onload = () => setTimeout(createGame, 500);
+    </script>
+</body>
+</html>
+      `);
+    }
+  } catch (error) {
+    reply.code(500).send({ error: "Failed to serve frontend" });
+  }
 });
 
 // Health check
 fastify.get("/api/health", async (_req, _reply) => {
   return { status: "ok" };
+});
+
+// Debug route for deployment troubleshooting
+fastify.get("/api/debug", async (_req, _reply) => {
+  const fs = require("fs");
+  const staticPath = path.join(__dirname, "../frontend/dist");
+  const indexPath = path.join(staticPath, "index.html");
+
+  return {
+    status: "debug",
+    __dirname,
+    staticPath,
+    indexPath,
+    indexExists: fs.existsSync(indexPath),
+    staticDirExists: fs.existsSync(staticPath),
+    staticDirContents: fs.existsSync(staticPath)
+      ? fs.readdirSync(staticPath)
+      : [],
+    cwd: process.cwd(),
+    env: {
+      PORT: process.env.PORT,
+      NODE_ENV: process.env.NODE_ENV,
+    },
+  };
 });
 
 // Create new game
