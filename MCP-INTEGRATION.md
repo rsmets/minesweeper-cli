@@ -71,8 +71,7 @@ For Windsurf IDE, you can configure MCP servers in your settings:
   "mcp": {
     "servers": {
       "minesweeper": {
-        "url": "http://localhost:8080/mcp/sse",
-        "transport": "sse"
+        "serverUrl": "http://localhost:8080/mcp/sse",
       }
     }
   }
@@ -141,6 +140,79 @@ The AI will use the `revealCell` and `flagCell` tools with the correct game ID a
 
 The AI will call the `getGameState` tool and format the response for you.
 
+## Technical Implementation
+
+### Server Code Changes
+
+The integration uses a plugin-based architecture to ensure proper MCP registration:
+
+```typescript
+// src/server.ts
+import Fastify from "fastify";
+const mcpPlugin = require("@mcp-it/fastify");
+import routesPlugin from "./routes";
+
+const fastify = Fastify({ logger: true });
+
+async function startServer() {
+  try {
+    // Register the MCP plugin FIRST
+    await fastify.register(mcpPlugin, {
+      name: "Minesweeper Game Server",
+      description: "MCP-enabled Minesweeper game API with tools for creating and playing games",
+      mountPath: "/mcp",
+      addDebugEndpoint: true,
+    });
+
+    // Register routes AFTER MCP plugin
+    await fastify.register(routesPlugin);
+
+    const address = await fastify.listen({
+      port: Number(PORT),
+      host: "0.0.0.0",
+    });
+
+    fastify.log.info(`Server listening at ${address}`);
+    fastify.log.info(`MCP SSE server available at ${address}/mcp/sse`);
+  } catch (err) {
+    fastify.log.error(err);
+    process.exit(1);
+  }
+}
+```
+
+### Route Schemas
+
+Each API endpoint includes detailed Fastify schemas that the MCP plugin uses to generate tools:
+
+```typescript
+// Example from src/schemas.ts
+export const routeSchemas = {
+  createGame: {
+    operationId: "createGame",
+    tags: ["game"],
+    summary: "Create new game",
+    description: "Create a new Minesweeper game with specified dimensions and bomb percentage",
+    body: gameConfigSchema,
+    response: {
+      201: gameResponseSchema,
+      400: validationErrorResponseSchema
+    }
+  }
+};
+```
+
+### Package Dependencies
+
+```json
+{
+  "dependencies": {
+    "@mcp-it/fastify": "^0.1.0",
+    "fastify": "^5.0.0"
+  }
+}
+```
+
 ## Running the MCP-Enabled Server
 
 ### Development
@@ -148,9 +220,13 @@ The AI will call the `getGameState` tool and format the response for you.
 # Start the server with MCP support
 pnpm run dev:server
 
+# Or with custom port
+PORT=8081 pnpm run dev:server
+
 # Server will be available at:
 # - Regular API: http://localhost:8080
 # - MCP SSE: http://localhost:8080/mcp/sse
+# - MCP Debug: http://localhost:8080/mcp/tools
 ```
 
 ### Production
@@ -158,12 +234,36 @@ pnpm run dev:server
 # Build and start
 pnpm run build
 pnpm run start:server
+
+# Or with environment variables
+PORT=8080 ADMIN_KEY=your-secret-key pnpm run start:server
 ```
 
 ### Environment Variables
 ```env
-PORT=8080                          # Server port
-ADMIN_KEY=your-secret-admin-key    # Admin key for protected endpoints
+PORT=8080                          # Server port (default: 8080)
+ADMIN_KEY=your-secret-admin-key    # Admin key for protected endpoints (optional)
+LOG_LEVEL=info                     # Logging level: silent, error, warn, info, debug, trace
+NODE_ENV=production                # Environment mode
+```
+
+### Verifying MCP Setup
+
+After starting the server, you can verify MCP integration:
+
+```bash
+# Check if MCP tools are being generated
+curl http://localhost:8080/mcp/tools
+
+# Should return an array of available tools like:
+# [
+#   {
+#     "name": "createGame",
+#     "description": "Create a new Minesweeper game...",
+#     "inputSchema": { ... }
+#   },
+#   ...
+# ]
 ```
 
 ## Benefits
@@ -184,12 +284,64 @@ Potential improvements for the MCP integration:
 4. **Response Formatting**: Custom formatters for game board visualization
 5. **Real-time Updates**: WebSocket integration for live game state updates
 
+## Troubleshooting
+
+### Common Issues
+
+**MCP tools not appearing in client:**
+1. Verify the server is running: `curl http://localhost:8080/api/health`
+2. Check MCP tools are generated: `curl http://localhost:8080/mcp/tools`
+3. Ensure client is connecting to correct URL (note the `/sse` suffix)
+4. Check server logs for "MCP plugin registered" message
+
+**Server won't start:**
+- Port conflict: Change port with `PORT=8081 pnpm run dev:server`
+- Dependencies: Run `pnpm install` to ensure all packages are installed
+- TypeScript errors: Run `npx tsc --noEmit` to check for compilation issues
+
+**Empty tools array (`[]`) from `/mcp/tools`:**
+- Routes may not have proper schemas defined
+- MCP plugin might be registered before routes
+- Check server startup logs for route registration messages
+
+**Client connection errors:**
+- Firewall blocking connections
+- Wrong URL format (ensure `/mcp/sse` endpoint)
+- CORS issues (if connecting from browser-based client)
+
+### Debug Mode
+
+Enable debug logging to see detailed MCP operation:
+
+```bash
+LOG_LEVEL=debug PORT=8080 pnpm run dev:server
+```
+
+Look for these log messages:
+- `"MCP plugin registered"`
+- `"New SSE connection established"`
+- Route registration details
+
+### Testing MCP Endpoints
+
+```bash
+# Test SSE endpoint (should return SSE headers)
+curl -I http://localhost:8080/mcp/sse
+
+# Test tools endpoint
+curl http://localhost:8080/mcp/tools | jq .
+
+# Test regular API still works
+curl http://localhost:8080/api/health
+```
+
 ## Related Resources
 
 - [Model Context Protocol Specification](https://modelcontextprotocol.io/)
 - [@mcp-it/fastify GitHub Repository](https://github.com/AdirAmsalem/mcp-it)
 - [Fastify Documentation](https://fastify.dev/)
 - [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
+- [Claude Desktop MCP Setup](https://docs.anthropic.com/claude/docs/mcp)
 
 ## License
 
