@@ -113,18 +113,26 @@ export class MinesweeperCLI {
   }
 
   /**
-   * Get validated input from user
+   * Get validated input from user with retry logic
+   * Continuously prompts the user until they provide valid input
+   *
+   * @param prompt - The question/prompt to display to the user
+   * @param validationFunction - Function that takes user input string and returns validated number
+   * @returns Promise that resolves to the validated numeric value
    */
   private async getValidatedInput(
     prompt: string,
-    validator: (input: string) => number
+    validationFunction: (userInputString: string) => number
   ): Promise<number> {
     while (true) {
+      // Get user input and remove leading/trailing whitespace
       const input = (await this.rl.question(prompt)).trim();
       try {
-        return validator(input);
-      } catch (error) {
-        console.log(error.message);
+        // Apply the validation function to the user's input
+        return validationFunction(input);
+      } catch (validationError) {
+        // Display the validation error message and prompt again
+        console.log(`❌ ${(validationError as Error).message}`);
       }
     }
   }
