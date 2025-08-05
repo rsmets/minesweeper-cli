@@ -73,7 +73,7 @@ To install pnpm: `npm install -g pnpm`
 
 ## Usage Modes
 
-### 🌐 Web Server Mode
+### 🌐 Local Web Server Mode
 
 The web server provides both a web interface and REST API:
 
@@ -112,10 +112,7 @@ Model Context Protocol support allows AI assistants to play Minesweeper using na
 - `GET /mcp/tools` - Debug endpoint listing available MCP tools
 
 **MCP Client Setup:**
-Visit `http://localhost:8080/mcp` for detailed setup instructions and configuration examples for:
-- Claude Desktop
-- Windsurf IDE  
-- Custom MCP clients
+Visit `http://localhost:8080/mcp` for more detailed setup instructions.
 
 **Quick MCP Test:**
 ```bash
@@ -138,6 +135,54 @@ pnpm dev:watch           # Auto-reload on changes
 pnpm build
 pnpm start               # Runs the CLI game
 ```
+
+### 🌐 Hosted Web Server Mode
+
+Use the hosted Minesweeper app without running your own instance:
+
+**Hosted URL:**
+```
+https://minesweeper.rest
+```
+
+**Hosted MCP Endpoint:**
+```
+https://minesweeper.rest/mcp/sse
+```
+
+**Windsurf IDE Configuration:**
+```json
+{
+  "mcpServers": {
+    "minesweeper": {
+      "serverUrl": "https://minesweeper.rest/mcp/sse"
+    }
+  }
+}
+```
+
+**Claude Desktop Configuration:**
+- Unable to get this working sadly, but works well with Windsurf's MCP Client
+```json
+{
+  "mcpServers": {
+    "minesweeper": {
+      "command": "npx",
+      "args": ["-y", "remote-mcp", "https://minesweeper.rest/mcp/sse"]
+    }
+  }
+}
+```
+
+**Available Tools:**
+All the same MCP tools are available on the hosted instance:
+- `createGame`, `getGameState`, `revealCell`, `flagCell`, `quitGame`, `executeCommand`, `getHealth`, `listGames`
+
+**Benefits:**
+- ✅ No local setup required
+- ✅ Always up-to-date
+- ✅ High availability
+- ✅ Perfect for testing MCP integration
 
 ## Game Configuration
 
