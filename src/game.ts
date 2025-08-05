@@ -59,6 +59,7 @@ export class MinesweeperGame {
       (totalCells * this.config.bombPercentage) / 100
     );
 
+    // Flattened array of all available positions
     const availablePositions: Position[] = [];
 
     // Collect all available positions
@@ -70,8 +71,13 @@ export class MinesweeperGame {
 
     // Randomly select bomb positions
     for (let i = 0; i < totalBombs && availablePositions.length > 0; i++) {
+      // Select a random index to remove from the available positions array
       const randomIndex = Math.floor(Math.random() * availablePositions.length);
+
+      // Remove the selected position from the array and store it in `bombPos`
       const bombPos = availablePositions.splice(randomIndex, 1)[0];
+
+      // Mark the selected position as a bomb in the game state grid
       this.state.grid[bombPos.row][bombPos.col].isBomb = true;
     }
   }
