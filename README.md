@@ -14,25 +14,37 @@ A command-line Minesweeper game built with Node.js and TypeScript.
 
 1. Install dependencies:
 ```bash
-npm install
+pnpm install
 ```
 
 2. Build the project:
 ```bash
-npm run build
+pnpm run build
 ```
+
+### Why pnpm?
+
+This project uses **pnpm** instead of npm as the package manager for several advantages:
+
+- **Faster installations**: pnpm uses a content-addressable store, making installations significantly faster
+- **Disk space efficiency**: Shared dependencies across projects save disk space through hard linking
+- **Strict dependency resolution**: Prevents phantom dependencies and ensures reproducible builds
+- **Better monorepo support**: Superior handling of workspaces and linked packages
+- **Drop-in replacement**: Uses the same `package.json` format and most npm commands work identically
+
+To install pnpm: `npm install -g pnpm`
 
 ## Usage
 
 ### Development Mode
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 ### Production Mode
 ```bash
-npm run build
-npm start
+pnpm run build
+pnpm start
 ```
 
 ## Game Configuration
@@ -83,19 +95,20 @@ Enter bomb percentage (e.g., 15.5): 12.5
 🎯 Game started! Use coordinates like "A1" to reveal cells, or "F A1" to flag/unflag.
 📋 Commands: [coordinate] to reveal, F [coordinate] to flag, Q to quit
 
+
 ====================================
-    A   B   C   D   E   F   G   H   
- 1 ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ 
- 2 ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ 
- 3 ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ 
- 4 ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ 
- 5 ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ 
- 6 ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ 
- 7 ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ 
- 8 ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ ⬜ 
+    A  B  C  D  E  F  G  H 
+ 1  .  .  .  .  .  .  .  . 
+ 2  .  .  .  .  .  .  .  . 
+ 3  .  .  .  .  .  .  .  . 
+ 4  .  .  .  .  .  .  .  . 
+ 5  .  .  .  .  .  .  .  . 
+ 6  .  .  .  .  .  .  .  . 
+ 7  .  .  .  .  .  .  .  . 
+ 8  .  .  .  .  .  .  .  . 
 ====================================
 
-Enter command: D4
+Enter command: 
 ```
 
 ## Development
@@ -110,10 +123,11 @@ src/
 ```
 
 ### Scripts
-- `npm run build`: Compile TypeScript to JavaScript
-- `npm run start`: Run the compiled game
-- `npm run dev`: Run in development mode with ts-node
-- `npm run clean`: Remove compiled files
+- `pnpm run build`: Compile TypeScript to JavaScript
+- `pnpm run start`: Run the compiled game
+- `pnpm run dev`: Run in development mode tsx
+- `pnpm run dev:watch`: Run in development mode tsx with watch
+- `pnpm run clean`: Remove compiled files
 
 ## Requirements Implemented
 
