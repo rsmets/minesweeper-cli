@@ -52,6 +52,7 @@ fastify.get("/", async (req: FastifyRequest, reply: FastifyReply) => {
         .nav-links { text-align: center; margin-bottom: 20px; }
         .nav-links a { color: #667eea; text-decoration: none; margin: 0 15px; font-weight: bold; }
         .nav-links a:hover { text-decoration: underline; }
+        .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef; color: #6c757d; font-size: 0.9em; }
         @media (max-width: 600px) { .container { padding: 20px; margin: 10px; } h1 { font-size: 2em; } .board { font-size: 0.9em; } .game-controls { flex-direction: column; align-items: center; } .command-section { flex-direction: column; } #commandInput { max-width: none; } }
     </style>
 </head>
@@ -94,6 +95,9 @@ fastify.get("/", async (req: FastifyRequest, reply: FastifyReply) => {
             <p><strong>Flag/Unflag:</strong> Type "F A1", "F B5", etc.</p>
             <p><strong>Quit game:</strong> Type "Q" or "QUIT"</p>
             <p><strong>Goal:</strong> Reveal all cells without bombs to win!</p>
+        </div>
+        <div class="footer">
+            Minesweeper v${VERSION} | <a href="/mcp" style="color: #667eea;">MCP Integration</a>
         </div>
     </div>
     <script>
@@ -252,6 +256,7 @@ fastify.get("/mcp", async (req: FastifyRequest, reply: FastifyReply) => {
         .mcp-config { background: #1e1e1e; color: #f8f8f2; padding: 15px; border-radius: 5px; font-family: 'Courier New', monospace; font-size: 0.9em; }
         .copy-btn { background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; float: right; font-size: 0.8em; }
         .copy-btn:hover { background: #0056b3; }
+        .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef; color: #6c757d; font-size: 0.9em; }
     </style>
 </head>
 <body>
@@ -345,6 +350,9 @@ fastify.get("/mcp", async (req: FastifyRequest, reply: FastifyReply) => {
                 <li><a href="/api/health" target="_blank">API Health Check</a></li>
                 <li><a href="https://github.com/AdirAmsalem/mcp-it" target="_blank">@mcp-it/fastify Plugin</a></li>
             </ul>
+        </div>
+        <div class="footer">
+            Minesweeper v${VERSION} | <a href="/" style="color: #667eea;">Play Game</a>
         </div>
     </div>
 
