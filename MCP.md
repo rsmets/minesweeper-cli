@@ -47,15 +47,27 @@ Note: This server uses SSE (Server-Sent Events) transport only. The plugin also 
 
 ## Client Configuration
 
-### Claude Desktop
+### Windsurf IDE
 
-Add this to your Claude Desktop configuration file (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+Add this to your Windsurf IDE configuration file:
 
 ```json
 {
   "mcpServers": {
     "minesweeper": {
       "serverUrl": "http://localhost:8080/mcp/sse"
+    }
+  }
+}
+```
+
+While the projct is hosted you can also use:
+
+```json
+{
+  "mcpServers": {
+    "minesweeper": {
+      "serverUrl": "https://minesweeper.rest/mcp/sse"
     }
   }
 }

@@ -274,7 +274,7 @@ fastify.get("/mcp", async (req: FastifyRequest, reply: FastifyReply) => {
             <p>This server supports the Model Context Protocol (MCP)! Connect AI assistants to play Minesweeper using natural language.</p>
 
             <h3>MCP Endpoint</h3>
-            <pre><strong>SSE Transport:</strong> http://localhost:${PORT}/mcp/sse</pre>
+            <pre><strong>SSE Transport:</strong> https://minesweeper.rest/mcp/sse</pre>
 
             <h3>Windsurf IDE Configuration</h3>
             <div style="position: relative;">
@@ -282,7 +282,7 @@ fastify.get("/mcp", async (req: FastifyRequest, reply: FastifyReply) => {
                 <pre class="mcp-config" id="claude-config">{
   "mcpServers": {
     "minesweeper": {
-      "serverUrl": "http://localhost:8080/mcp/sse"
+      "serverUrl": "https://minesweeper.rest/mcp/sse"
     }
   }
 }</pre>
