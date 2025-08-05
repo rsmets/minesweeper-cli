@@ -1,0 +1,9 @@
+.env
+.env.*
+Dockerfile
+docker-compose.*
+node_modules
+.git
+*.log
+dist
+*.tsbuildinfo

@@ -141,3 +141,30 @@ src/
 ✅ Flag functionality for marking suspected bombs  
 
 Enjoy playing Minesweeper! 🎮
+
+## Docker Usage
+
+You can run Minesweeper CLI in a containerized environment using Docker. This is useful for consistent local development or sharing the game with others.
+
+### Build the Docker Image
+```bash
+docker build -t minesweeper-cli .
+```
+
+### Run the Game
+```bash
+docker run -it --rm minesweeper-cli
+```
+
+- The `-it` flag ensures interactive mode for CLI input.
+- The `--rm` flag removes the container after exit.
+
+### Using a Custom .env File
+If you want to use custom environment variables (e.g., for log level or default board size), mount your `.env` file:
+```bash
+docker run -it --rm -v $(pwd)/.env:/app/.env minesweeper-cli
+```
+
+- This will provided the container with your local `.env` file.
+
+---
