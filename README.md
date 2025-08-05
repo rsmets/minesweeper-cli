@@ -73,7 +73,7 @@ To install pnpm: `npm install -g pnpm`
 
 ## Usage Modes
 
-### 🌐 Local Web Server Mode
+### 🌐 Local Web & MCP Server Mode
 
 The web server provides both a web interface and REST API:
 
@@ -136,7 +136,7 @@ pnpm build
 pnpm start               # Runs the CLI game
 ```
 
-### 🌐 Hosted Web Server Mode
+### 🌐 Hosted Web & MCP Server Mode
 
 Use the hosted Minesweeper app without running your own instance:
 
