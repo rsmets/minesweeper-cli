@@ -3,8 +3,16 @@ import { MinesweeperGame } from "./game";
 import { renderBoardText } from "./serverBoardText";
 import { GameConfig, Position, GameStatus } from "./types";
 import { randomUUID } from "crypto";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 const fastify = Fastify({ logger: true });
+
+// Read version from package.json
+const packageJson = JSON.parse(
+  readFileSync(join(__dirname, "../package.json"), "utf8"),
+);
+const VERSION = packageJson.version;
 
 // Environment variables:
 // - PORT: Server port (default: 8080)
@@ -61,6 +69,7 @@ fastify.get("/", async (req: FastifyRequest, reply: FastifyReply) => {
         .instructions { background: rgba(52, 152, 219, 0.1); border-left: 4px solid #3498db; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0; }
         .instructions h3 { color: #3498db; margin-bottom: 10px; }
         .instructions p { margin: 5px 0; color: #555; }
+        .version-footer { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd; color: #999; font-size: 0.9em; }
         @media (max-width: 600px) { .container { padding: 20px; margin: 10px; } h1 { font-size: 2em; } .board { font-size: 0.9em; } .game-controls { flex-direction: column; align-items: center; } .command-section { flex-direction: column; } #commandInput { max-width: none; } }
     </style>
 </head>
@@ -96,6 +105,9 @@ fastify.get("/", async (req: FastifyRequest, reply: FastifyReply) => {
             <p><strong>Flag/Unflag:</strong> Type "F A1", "F B5", etc.</p>
             <p><strong>Quit game:</strong> Type "Q" or "QUIT"</p>
             <p><strong>Goal:</strong> Reveal all cells without bombs to win!</p>
+        </div>
+        <div class="version-footer">
+            Minesweeper Web v${VERSION}
         </div>
     </div>
     <script>
