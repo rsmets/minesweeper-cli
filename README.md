@@ -105,10 +105,23 @@ pnpm start:server # With custom port
 - `POST /api/game/:id/quit` - Quit game session
 - `POST /api/game/:id/command` - CLI-style commands
 
-**MCP Endpoints:**
+**MCP Integration:**
+Model Context Protocol support allows AI assistants to play Minesweeper using natural language:
 - `GET /mcp/sse` - Server-Sent Events transport for MCP clients
 - `POST /mcp/messages` - Message handling for SSE transport
 - `GET /mcp/tools` - Debug endpoint listing available MCP tools
+
+**MCP Client Setup:**
+Visit `http://localhost:8080/mcp` for detailed setup instructions and configuration examples for:
+- Claude Desktop
+- Windsurf IDE  
+- Custom MCP clients
+
+**Quick MCP Test:**
+```bash
+# Verify MCP tools are available
+curl http://localhost:8080/mcp/tools
+```
 
 ### 🖥️ CLI Mode
 
