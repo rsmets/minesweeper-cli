@@ -387,8 +387,19 @@ async function startServer() {
   try {
     // Enable CORS for MCP SSE connections
     await fastify.register(cors, {
+      // Allow requests from any origin
+      // Not great for production but this is a dummy app and I want to allow any MCP client to connect
       origin: true,
+
+      // Allow credentials (cookies, authorization headers) to be sent
+      // Required for MCP authentication and session management
       credentials: true,
+
+      // Allow specific headers that MCP clients might send
+      allowedHeaders: ["Content-Type", "Authorization", "X-Admin-Key"],
+
+      // Specify which HTTP methods are allowed for CORS requests
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     });
 
     // Register swagger

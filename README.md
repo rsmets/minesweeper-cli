@@ -340,8 +340,11 @@ data/                  # Game data storage (if needed)
 ## Environment Variables
 
 - `LOG_LEVEL`: Set to `debug` or `trace` for verbose logging (default: `silent`)
-- `PORT`: Web server port (default: `3000`)
+- `PORT`: Web server port (default: `8080`)
+- `ADMIN_KEY`: Admin key for protected endpoints (optional)
 - `NODE_ENV`: Environment mode (default: `production` in Docker)
+  - `development`: Allows CORS from all origins (needed for local MCP testing)
+  - `production`: Restricts CORS to known MCP clients (Claude, Cursor)
 
 ## Requirements Implemented
 

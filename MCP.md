@@ -256,8 +256,13 @@ PORT=8080 ADMIN_KEY=your-secret-key pnpm run start:server
 PORT=8080                          # Server port (default: 8080)
 ADMIN_KEY=your-secret-admin-key    # Admin key for protected endpoints (optional)
 LOG_LEVEL=info                     # Logging level: silent, error, warn, info, debug, trace
-NODE_ENV=production                # Environment mode
+NODE_ENV=production                # Environment mode (affects CORS policy)
 ```
+
+**CORS Configuration:**
+- **Development** (`NODE_ENV=development`): Allows CORS from all origins for easy MCP client testing
+- **Production** (`NODE_ENV=production`): Restricts CORS to known MCP clients (Claude, Cursor) for security
+- **Fly.io Deployment**: Automatically uses production mode with restricted CORS origins
 
 ### Verifying MCP Setup
 
@@ -305,6 +310,11 @@ Potential improvements for the MCP integration:
 2. Check MCP tools are generated: `curl http://localhost:8080/mcp/tools`
 3. Ensure client is connecting to correct URL (note the `/sse` suffix)
 4. Check server logs for "MCP plugin registered" message
+
+**CORS/Connection issues:**
+- Set `NODE_ENV=development` for local testing to allow all origins
+- In production, only Claude and Cursor domains are whitelisted
+- Check browser console for CORS errors if using web-based MCP clients
 
 **Server won't start:**
 - Port conflict: Change port with `PORT=8081 pnpm run dev:server`
