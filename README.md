@@ -282,19 +282,19 @@ data/                  # Game data storage (if needed)
 
 ## Requirements Implemented
 
-✅ Grid of arbitrary dimensions
-✅ Configurable bomb percentage
-✅ Two bomb population modes (before/after first click)
-✅ Terminal-based interface with text coordinates (A1, B2, etc.)
-✅ Web-based interface with REST API
-✅ Bomb detection and game over logic
-✅ Adjacent bomb counting
-✅ Recursive reveal for empty cells (flood fill)
-✅ Flag functionality for marking suspected bombs
-✅ Docker containerization
-✅ Development and production modes
-✅ Inline HTML/JS frontend (no build process or separate files required)
-✅ Responsive web design with mobile support
+- ✅ Grid of arbitrary dimensions
+- ✅ Configurable bomb percentage
+- ✅ Two bomb population modes (before/after first click)
+- ✅ Terminal-based interface with text coordinates (A1, B2, etc.)
+- ✅ Web-based interface with REST API
+- ✅ Bomb detection and game over logic
+- ✅ Adjacent bomb counting
+- ✅ Recursive reveal for empty cells (flood fill)
+- ✅ Flag functionality for marking suspected bombs
+- ✅ Docker containerization
+- ✅ Development and production modes
+- ✅ Inline HTML/JS frontend (no build process or separate files required)
+- ✅ Responsive web design with mobile support
 
 ## Troubleshooting
 
