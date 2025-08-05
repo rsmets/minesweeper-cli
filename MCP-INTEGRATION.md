@@ -39,8 +39,11 @@ Your existing API endpoints are now available as MCP tools:
 
 When the server starts with MCP integration, it provides:
 
-- **SSE Endpoint**: `http://localhost:8080/mcp/sse` - Server-Sent Events transport
-- **HTTP Endpoint**: `http://localhost:8080/mcp` - Streamable HTTP transport (if supported)
+- **SSE Endpoint**: `http://localhost:8080/mcp/sse` - Server-Sent Events transport for client connections
+- **Messages Endpoint**: `http://localhost:8080/mcp/messages` - POST endpoint for SSE message handling
+- **Debug Endpoint**: `http://localhost:8080/mcp/tools` - Lists all available MCP tools (when `addDebugEndpoint: true`)
+
+Note: This server uses SSE (Server-Sent Events) transport only. The plugin also supports streamable HTTP transport, but we use SSE for better compatibility with most MCP clients.
 
 ## Client Configuration
 
@@ -59,9 +62,9 @@ Add this to your Claude Desktop configuration file (`~/Library/Application Suppo
 }
 ```
 
-### Cursor IDE
+### Windsurf IDE
 
-For Cursor, you can configure MCP servers in your settings:
+For Windsurf IDE, you can configure MCP servers in your settings:
 
 ```json
 {
@@ -106,7 +109,7 @@ console.log("Available tools:", tools.tools);
 
 // Call a tool
 const result = await client.callTool({
-  name: "POST_/api/game",
+  name: "createGame",
   arguments: {
     body: {
       width: 8,
@@ -124,65 +127,19 @@ Once connected to an MCP client, you can interact with the Minesweeper game usin
 ### Creating a Game
 > "Create a new minesweeper game with a 10x10 board and 15% bombs"
 
-The AI will call the `POST /api/game` tool with the appropriate parameters.
+The AI will call the `createGame` tool with the appropriate parameters.
 
 ### Playing the Game
 > "Reveal the cell at row 5, column 3 in game abc123"
 > "Flag the cell at position (2, 7) in the current game"
 
-The AI will use the reveal and flag tools with the correct game ID and coordinates.
+The AI will use the `revealCell` and `flagCell` tools with the correct game ID and coordinates.
 
 ### Getting Game State
 > "Show me the current state of game abc123"
 > "What's the status of my minesweeper game?"
 
-The AI will call the game state tool and format the response for you.
-
-## Technical Implementation
-
-### Server Code Changes
-
-The integration required minimal changes to the existing server:
-
-```typescript
-// Import the MCP plugin
-const mcpPlugin = require("@mcp-it/fastify");
-
-// Register the plugin during server startup
-async function startServer() {
-  try {
-    // Register the MCP plugin
-    await fastify.register(mcpPlugin, {
-      name: "Minesweeper Game Server",
-      description: "MCP-enabled Minesweeper game API with tools for creating and playing games",
-    });
-
-    const address = await fastify.listen({
-      port: Number(PORT),
-      host: "0.0.0.0",
-    });
-    
-    fastify.log.info(`Server listening at ${address}`);
-    fastify.log.info(`MCP SSE server available at ${address}/mcp/sse`);
-  } catch (err) {
-    fastify.log.error(err);
-    process.exit(1);
-  }
-}
-```
-
-### Package Dependencies
-
-Added dependency in `package.json`:
-
-```json
-{
-  "dependencies": {
-    "@mcp-it/fastify": "^0.1.0",
-    "fastify": "^5.0.0"
-  }
-}
-```
+The AI will call the `getGameState` tool and format the response for you.
 
 ## Running the MCP-Enabled Server
 
@@ -217,43 +174,12 @@ ADMIN_KEY=your-secret-admin-key    # Admin key for protected endpoints
 4. **AI Integration**: Natural language interface to your Minesweeper game
 5. **Standardized**: Uses the open MCP standard for maximum compatibility
 
-## Troubleshooting
-
-### Common Issues
-
-**Server won't start:**
-- Ensure Fastify v5+ is installed: `pnpm add fastify@^5.0.0`
-- Check for port conflicts: `lsof -i :8080`
-
-**MCP client can't connect:**
-- Verify the server is running and accessible
-- Check the MCP endpoint: `curl http://localhost:8080/mcp/sse`
-- Ensure firewall/proxy settings allow the connection
-
-**Tools not appearing:**
-- Confirm the MCP plugin registered successfully (check server logs)
-- Verify your client supports SSE transport
-- Check client configuration syntax
-
-### Debugging
-
-Enable debug logging:
-```bash
-LOG_LEVEL=debug pnpm run dev:server
-```
-
-Check MCP plugin registration in logs:
-```
-{"msg":"MCP plugin registered"}
-{"msg":"MCP SSE server available at http://localhost:8080/mcp/sse"}
-```
-
 ## Future Enhancements
 
 Potential improvements for the MCP integration:
 
 1. **Schema Enrichment**: Add OpenAPI/JSON schemas to routes for better tool descriptions
-2. **Custom Tool Names**: Use `operationId` in route schemas for friendly tool names
+2. **Custom Tool Names**: Use `operationId` in route schemas for friendly tool names (already implemented)
 3. **Tool Categories**: Group related tools using route tags
 4. **Response Formatting**: Custom formatters for game board visualization
 5. **Real-time Updates**: WebSocket integration for live game state updates
