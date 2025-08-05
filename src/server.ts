@@ -192,13 +192,31 @@ fastify.get("/", async (req, reply) => {
             inputs.forEach(input => input.disabled = loading);
         }
 
-        document.getElementById('commandInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') submitCommand();
-        });
+        // DOM ready check - works for both cached and uncached loads
+        function initializeApp() {
+            // Add Enter key listener for command input
+            const commandInput = document.getElementById('commandInput');
+            if (commandInput) {
+                commandInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        submitCommand();
+                    }
+                });
+            }
 
-        window.addEventListener('load', function() {
-            setTimeout(createNewGame, 500);
-        });
+            // Auto-start a game after a brief delay
+            setTimeout(createNewGame, 100);
+        }
+
+        // Use multiple DOM ready strategies to ensure it works with caching
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            // DOM is already ready (cached scenario)
+            initializeApp();
+        } else {
+            // DOM is still loading (first load scenario)
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        }
     </script>
 </body>
 </html>
