@@ -194,9 +194,30 @@ fastify.get("/", async (req, reply) => {
   `);
 });
 
-// Health check
-fastify.get("/api/health", async (_req, _reply) => {
-  return { status: "ok" };
+// Health check - robust for Fly.io
+fastify.get("/api/health", async (req, reply) => {
+  try {
+    reply.status(200).send({
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      version: "1.0.0",
+    });
+  } catch (error) {
+    reply.status(500).send({
+      status: "error",
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
+
+// Additional health check routes for Fly.io compatibility
+fastify.get("/health", async (req, reply) => {
+  reply.status(200).send({ status: "healthy" });
+});
+
+fastify.get("/healthz", async (req, reply) => {
+  reply.status(200).send({ status: "ok" });
 });
 
 // Debug route for deployment troubleshooting
@@ -317,7 +338,7 @@ fastify.post<{ Params: { id: string }; Body: { command: string } }>(
   },
 );
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8080;
 
 fastify.listen({ port: Number(port), host: "0.0.0.0" }, (err, address) => {
   if (err) {
