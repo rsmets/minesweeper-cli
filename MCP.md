@@ -32,6 +32,7 @@ Your existing API endpoints are now available as MCP tools:
 | `GET /api/game/:id` | Get game state | Retrieve current game state |
 | `POST /api/game/:id/reveal` | Reveal cell | Reveal a cell in the game |
 | `POST /api/game/:id/flag` | Flag cell | Flag/unflag a cell |
+| `POST /api/game/:id/quit` | Quit game | End the current game session |
 | `POST /api/game/:id/command` | Execute command | Run text commands |
 | `GET /api/games` | List games | List all active games (admin) |
 

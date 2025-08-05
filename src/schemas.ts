@@ -299,4 +299,26 @@ export const routeSchemas = {
       404: errorResponseSchema,
     },
   },
+
+  // Quit game endpoint
+  quitGame: {
+    operationId: "quitGame",
+    tags: ["game"],
+    summary: "Quit game",
+    description: "End the current game session gracefully",
+    params: gameIdParamSchema,
+    response: {
+      200: {
+        type: "object",
+        properties: {
+          message: {
+            type: "string",
+            description: "Confirmation message",
+          },
+          gameState: gameResponseSchema,
+        },
+      },
+      404: errorResponseSchema,
+    },
+  },
 } as const;

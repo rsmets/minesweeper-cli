@@ -102,6 +102,7 @@ pnpm start:server # With custom port
 - `GET /api/game/:id` - Get game state
 - `POST /api/game/:id/reveal` - Reveal cell
 - `POST /api/game/:id/flag` - Toggle flag
+- `POST /api/game/:id/quit` - Quit game session
 - `POST /api/game/:id/command` - CLI-style commands
 
 **MCP Endpoints:**
@@ -227,6 +228,12 @@ curl -X POST http://localhost:3000/api/game/{gameId}/command \
   -d '{"command": "A1"}'
 ```
 
+### Quit Game
+```bash
+curl -X POST http://localhost:3000/api/game/{gameId}/quit \
+  -H "Content-Type: application/json"
+```
+
 ### List All Games (Protected)
 ```bash
 # Requires admin key authentication
@@ -247,9 +254,10 @@ This server supports the Model Context Protocol, allowing AI assistants to inter
 
 **Available MCP Tools:**
 - `createGame` - Create new Minesweeper game
-- `getGameState` - Get current game state
+- `getGameState` - Get current game state  
 - `revealCell` - Reveal a cell at specified coordinates
 - `flagCell` - Flag/unflag a cell
+- `quitGame` - End the current game session
 - `executeCommand` - Run text commands like "reveal 3 4"
 - `getHealth` - Check server health
 - `listGames` - List all games (admin only)
@@ -259,6 +267,7 @@ This server supports the Model Context Protocol, allowing AI assistants to inter
 - "Reveal the cell at row 5, column 3"
 - "Flag the cell at position (2, 7)"
 - "Show me the current game state"
+- "Quit the current game"
 
 **Quick Verification:**
 ```bash
