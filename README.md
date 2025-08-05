@@ -247,16 +247,12 @@ Enter command: A1
 ```
 src/
 ├── index.ts           # CLI entry point
-├── server.ts          # Web server entry point
+├── server.ts          # Web server entry point (includes inline web UI)
 ├── cli.ts             # CLI interface and user interaction
 ├── game.ts            # Core game logic
 ├── serverBoardText.ts # Server-side board rendering
 ├── types.ts           # TypeScript type definitions
 └── logger.ts          # Logging configuration
-
-frontend/              # Web UI (static files)
-└── dist/
-    └── index.html     # Complete web interface (HTML/CSS/JS)
 
 data/                  # Game data storage (if needed)
 ```
@@ -297,7 +293,7 @@ data/                  # Game data storage (if needed)
 ✅ Flag functionality for marking suspected bombs  
 ✅ Docker containerization  
 ✅ Development and production modes  
-✅ Simple HTML/JS frontend (no build process required)  
+✅ Inline HTML/JS frontend (no build process or separate files required)  
 ✅ Responsive web design with mobile support
 
 ## Troubleshooting
@@ -321,8 +317,8 @@ docker build -t minesweeper-web . --progress=plain
 ```
 
 ### Frontend Issues
-The frontend is a single HTML file with embedded CSS and JavaScript - no build process is required. If you see a blank page:
-1. Check that the server is serving static files from `frontend/dist/`
+The frontend is completely inline in the server code - no separate files or build process required. If you see a blank page:
+1. Check that the root route `/` is properly registered in the server
 2. Verify the API endpoints are responding (test `/api/health`)
 3. Check browser console for JavaScript errors
 

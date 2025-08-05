@@ -5,7 +5,6 @@ docker-compose.*
 node_modules
 .git
 *.log
-# Don't ignore frontend/dist - we need it for static files
 /dist
 *.tsbuildinfo
 .trunk
