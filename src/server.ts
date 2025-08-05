@@ -271,14 +271,13 @@ fastify.get("/mcp", async (req: FastifyRequest, reply: FastifyReply) => {
             <h3>MCP Endpoint</h3>
             <pre><strong>SSE Transport:</strong> http://localhost:${PORT}/mcp/sse</pre>
 
-            <h3>Claude Desktop Configuration</h3>
+            <h3>Windsurf IDE Configuration</h3>
             <div style="position: relative;">
                 <button class="copy-btn" onclick="copyConfig()">Copy</button>
                 <pre class="mcp-config" id="claude-config">{
   "mcpServers": {
     "minesweeper": {
-      "url": "http://localhost:${PORT}/mcp/sse",
-      "type": "sse"
+      "serverUrl": "http://localhost:8080/mcp/sse"
     }
   }
 }</pre>

@@ -55,8 +55,7 @@ Add this to your Claude Desktop configuration file (`~/Library/Application Suppo
 {
   "mcpServers": {
     "minesweeper": {
-      "url": "http://localhost:8080/mcp/sse",
-      "type": "sse"
+      "serverUrl": "http://localhost:8080/mcp/sse"
     }
   }
 }

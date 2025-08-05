@@ -32,7 +32,7 @@ Then open http://localhost:8080 in your browser.
 pnpm install
 pnpm build
 pnpm start:server
-``` 
+```
 
 ### Command Line Interface
 
@@ -241,13 +241,13 @@ This server supports the Model Context Protocol, allowing AI assistants to inter
 
 ### Quick Setup
 
-1. **Start the server**: `pnpm run dev:server` 
+1. **Start the server**: `pnpm run dev:server`
 2. **Visit MCP page**: Open `http://localhost:8080/mcp` for setup instructions
 3. **Configure your AI client** with the SSE endpoint: `http://localhost:8080/mcp/sse`
 
 **Available MCP Tools:**
 - `createGame` - Create new Minesweeper game
-- `getGameState` - Get current game state  
+- `getGameState` - Get current game state
 - `revealCell` - Reveal a cell at specified coordinates
 - `flagCell` - Flag/unflag a cell
 - `executeCommand` - Run text commands like "reveal 3 4"
@@ -266,7 +266,7 @@ This server supports the Model Context Protocol, allowing AI assistants to inter
 curl http://localhost:8080/mcp/tools
 ```
 
-For detailed setup instructions, client configuration examples, and troubleshooting, visit the **MCP Integration page** at `http://localhost:8080/mcp` or see [MCP-INTEGRATION.md](MCP-INTEGRATION.md).
+For detailed setup instructions, client configuration examples, and troubleshooting, visit the **MCP Integration page** at `http://localhost:8080/mcp` or see [MCP.md](./MCP.md).
 
 ## Example Game Flow (CLI)
 
