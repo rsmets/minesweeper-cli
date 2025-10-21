@@ -4,19 +4,26 @@ import {
   FastifyRequest,
   FastifyReply,
 } from "fastify";
-import { MinesweeperGame } from "./game";
-import { renderBoardText } from "./serverBoardText";
-import { GameConfig, Position, CellState } from "./types";
-import { randomUUID } from "crypto";
-import { routeSchemas } from "./schemas";
+import { ExampleService } from "./service";
+import { routeSchemas, createItemSchema, updateItemSchema } from "./schemas";
+import { readFileSync } from "fs";
+import { join } from "path";
 
-// In-memory game sessions: { [id]: MinesweeperGame }
-const games: Record<string, MinesweeperGame> = {};
+// Read version from package.json
+const packageJson = JSON.parse(
+  readFileSync(join(__dirname, "../package.json"), "utf8")
+);
+const VERSION = packageJson.version;
 
 // Environment variables
+// - ADMIN_KEY: Admin key for protected endpoints (set via environment or .env file)
 const ADMIN_KEY = process.env.ADMIN_KEY;
 
-// Authorization middleware
+/**
+ * Authorization middleware - requires valid admin key
+ * Checks for admin key in X-Admin-Key or Authorization header
+ * Returns 401 if key is missing or invalid
+ */
 const requireAdminKey = async (req: FastifyRequest, reply: FastifyReply) => {
   const adminKey = req.headers["x-admin-key"] || req.headers["authorization"];
 
@@ -30,9 +37,23 @@ const requireAdminKey = async (req: FastifyRequest, reply: FastifyReply) => {
   }
 };
 
-// Routes plugin
+/**
+ * Routes plugin
+ * Registers all API routes with the Fastify instance
+ */
 const routesPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-  // Health check endpoint
+  // Initialize the example service as a singleton
+  const exampleService = new ExampleService();
+
+  // ===========================
+  // Health Check Endpoint
+  // ===========================
+
+  /**
+   * GET /api/health
+   * Public endpoint for health checks
+   * Used by load balancers, monitoring systems, and fly.io
+   */
   fastify.get(
     "/api/health",
     {
@@ -44,7 +65,7 @@ const routesPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
           status: "ok",
           timestamp: new Date().toISOString(),
           uptime: process.uptime(),
-          version: "1.0.0",
+          version: VERSION,
         });
       } catch (error) {
         reply.status(500).send({
@@ -52,319 +73,185 @@ const routesPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
           message: "Health check failed",
         });
       }
-    },
+    }
   );
 
-  // Create new game endpoint
-  fastify.post<{ Body: GameConfig }>(
-    "/api/game",
+  // ===========================
+  // CRUD Endpoints for Items
+  // ===========================
+
+  /**
+   * POST /api/items
+   * Create a new item
+   * Body: { name: string, description?: string }
+   */
+  fastify.post<{ Body: { name: string; description?: string } }>(
+    "/api/items",
     {
-      schema: routeSchemas.createGame,
+      schema: routeSchemas.createItem,
     },
-    async (req: FastifyRequest<{ Body: GameConfig }>, reply: FastifyReply) => {
-      const config = req.body;
+    async (
+      req: FastifyRequest<{ Body: { name: string; description?: string } }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        // Validate request body using Zod schema
+        const validatedData = createItemSchema.parse(req.body);
 
-      // Validate configuration
-      const errors: string[] = [];
+        // Create the item using the service
+        const item = exampleService.create(validatedData);
 
-      if (!config.width || config.width < 3 || config.width > 50) {
-        errors.push("Width must be between 3 and 50");
+        // Return 201 Created with the new item
+        reply.code(201).send(item);
+      } catch (error: any) {
+        // Handle validation errors from Zod
+        if (error.name === "ZodError") {
+          return reply.code(400).send({
+            error: "Validation error",
+            details: error.errors.map((e: any) => e.message),
+          });
+        }
+
+        // Handle unexpected errors
+        reply.code(500).send({
+          error: "Internal server error",
+          message: "Failed to create item",
+        });
       }
-      if (!config.height || config.height < 3 || config.height > 50) {
-        errors.push("Height must be between 3 and 50");
-      }
-      if (
-        !config.bombPercentage ||
-        config.bombPercentage < 1 ||
-        config.bombPercentage > 99
-      ) {
-        errors.push("Bomb percentage must be between 1 and 99");
-      }
-
-      if (errors.length > 0) {
-        return reply
-          .code(400)
-          .send({ error: "Invalid configuration", details: errors });
-      }
-
-      const gameId = randomUUID();
-      const game = new MinesweeperGame(config);
-      games[gameId] = game;
-
-      const gameState = game.getGameState();
-      reply.code(201).send({
-        id: gameId,
-        config: game.getConfig(),
-        status: gameState.status,
-        board: renderBoardText(game.getConfig(), gameState),
-        flags: gameState.grid
-          .flat()
-          .filter((cell) => cell.state === CellState.FLAGGED).length,
-        remainingCells: gameState.totalSafeCells - gameState.revealedCells,
-      });
-    },
+    }
   );
 
-  // Get game state endpoint
+  /**
+   * GET /api/items/:id
+   * Get a specific item by ID
+   * Params: { id: string (UUID) }
+   */
   fastify.get<{ Params: { id: string } }>(
-    "/api/game/:id",
+    "/api/items/:id",
     {
-      schema: routeSchemas.getGameState,
+      schema: routeSchemas.getItem,
     },
     async (
       req: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply,
+      reply: FastifyReply
     ) => {
-      const game = games[req.params.id];
-      if (!game) return reply.code(404).send({ error: "Game not found" });
+      const item = exampleService.get(req.params.id);
 
-      const gameState = game.getGameState();
-      reply.send({
-        id: req.params.id,
-        config: game.getConfig(),
-        status: gameState.status,
-        board: renderBoardText(game.getConfig(), gameState),
-        flags: gameState.grid
-          .flat()
-          .filter((cell) => cell.state === CellState.FLAGGED).length,
-        remainingCells: gameState.totalSafeCells - gameState.revealedCells,
-      });
-    },
-  );
-
-  // Reveal cell endpoint
-  fastify.post<{ Params: { id: string }; Body: Position }>(
-    "/api/game/:id/reveal",
-    {
-      schema: routeSchemas.revealCell,
-    },
-    async (
-      req: FastifyRequest<{ Params: { id: string }; Body: Position }>,
-      reply: FastifyReply,
-    ) => {
-      const game = games[req.params.id];
-      if (!game) return reply.code(404).send({ error: "Game not found" });
-
-      const { row, col } = req.body as Position;
-
-      // Validate position
-      const config = game.getConfig();
-      if (row < 0 || row >= config.height || col < 0 || col >= config.width) {
-        return reply.code(400).send({ error: "Invalid position" });
-      }
-
-      const success = game.revealCell({ row, col });
-      if (!success) {
-        return reply.code(400).send({
-          error: "Cannot reveal cell - it may already be revealed or flagged",
+      if (!item) {
+        return reply.code(404).send({
+          error: "Not found",
+          message: `Item with ID ${req.params.id} not found`,
         });
       }
 
-      const gameState = game.getGameState();
-      reply.send({
-        id: req.params.id,
-        config: game.getConfig(),
-        status: gameState.status,
-        board: renderBoardText(game.getConfig(), gameState),
-        flags: gameState.grid
-          .flat()
-          .filter((cell) => cell.state === CellState.FLAGGED).length,
-        remainingCells: gameState.totalSafeCells - gameState.revealedCells,
-      });
-    },
+      reply.send(item);
+    }
   );
 
-  // Flag cell endpoint
-  fastify.post<{ Params: { id: string }; Body: Position }>(
-    "/api/game/:id/flag",
-    {
-      schema: routeSchemas.flagCell,
-    },
-    async (
-      req: FastifyRequest<{ Params: { id: string }; Body: Position }>,
-      reply: FastifyReply,
-    ) => {
-      const game = games[req.params.id];
-      if (!game) return reply.code(404).send({ error: "Game not found" });
-
-      const { row, col } = req.body as Position;
-
-      // Validate position
-      const config = game.getConfig();
-      if (row < 0 || row >= config.height || col < 0 || col >= config.width) {
-        return reply.code(400).send({ error: "Invalid position" });
-      }
-
-      const success = game.toggleFlag({ row, col });
-      if (!success) {
-        return reply
-          .code(400)
-          .send({ error: "Cannot flag cell - it may already be revealed" });
-      }
-
-      const gameState = game.getGameState();
-      reply.send({
-        id: req.params.id,
-        config: game.getConfig(),
-        status: gameState.status,
-        board: renderBoardText(game.getConfig(), gameState),
-        flags: gameState.grid
-          .flat()
-          .filter((cell) => cell.state === CellState.FLAGGED).length,
-        remainingCells: gameState.totalSafeCells - gameState.revealedCells,
-      });
-    },
-  );
-
-  // List games endpoint (admin only)
+  /**
+   * GET /api/items
+   * List all items (admin only)
+   * Requires admin key in X-Admin-Key or Authorization header
+   */
   fastify.get(
-    "/api/games",
+    "/api/items",
     {
-      schema: routeSchemas.listGames,
-      preHandler: requireAdminKey,
+      schema: routeSchemas.listItems,
+      preHandler: requireAdminKey, // Apply authorization middleware
     },
     async (req: FastifyRequest, reply: FastifyReply) => {
+      const items = exampleService.getAll();
       reply.send({
-        ids: Object.keys(games),
-        total: Object.keys(games).length,
-        message: "Active game sessions",
+        items,
+        total: items.length,
       });
-    },
+    }
   );
 
-  // Command endpoint
-  fastify.post<{ Params: { id: string }; Body: { command: string } }>(
-    "/api/game/:id/command",
+  /**
+   * PUT /api/items/:id
+   * Update an existing item
+   * Params: { id: string (UUID) }
+   * Body: { name?: string, description?: string }
+   */
+  fastify.put<{
+    Params: { id: string };
+    Body: { name?: string; description?: string };
+  }>(
+    "/api/items/:id",
     {
-      schema: routeSchemas.executeCommand,
+      schema: routeSchemas.updateItem,
     },
     async (
       req: FastifyRequest<{
         Params: { id: string };
-        Body: { command: string };
+        Body: { name?: string; description?: string };
       }>,
-      reply: FastifyReply,
+      reply: FastifyReply
     ) => {
-      const game = games[req.params.id];
-      if (!game) return reply.code(404).send({ error: "Game not found" });
+      try {
+        // Validate request body using Zod schema
+        const validatedData = updateItemSchema.parse(req.body);
 
-      const input = req.body.command.trim();
-      let message = "";
-      let gameState = game.getGameState();
+        // Update the item using the service
+        const item = exampleService.update(req.params.id, validatedData);
 
-      // Handle empty command (just return current board)
-      if (input === "") {
-        message =
-          "Enter a command like A1 to reveal, F A1 to flag, or Q to quit";
-        reply.send({
-          board: renderBoardText(game.getConfig(), gameState),
-          message,
-          status: gameState.status,
-        });
-        return;
-      }
-
-      // Parse CLI-style commands: 'F A1', 'A1', 'Q'
-      const flagMatch = input.match(/^F\s+([A-Z])(\d{1,2})$/i);
-      const revealMatch = input.match(/^([A-Z])(\d{1,2})$/i);
-      const quitMatch = input.match(/^Q(UIT)?$/i);
-
-      if (quitMatch) {
-        message = "Game quit.";
-        reply.send({
-          board: renderBoardText(game.getConfig(), gameState),
-          message,
-          status: "QUIT",
-        });
-        return;
-      }
-
-      let success = false;
-      const config = game.getConfig();
-
-      if (flagMatch) {
-        const col =
-          flagMatch[1].toUpperCase().charCodeAt(0) - "A".charCodeAt(0);
-        const row = parseInt(flagMatch[2], 10) - 1;
-
-        if (row < 0 || row >= config.height || col < 0 || col >= config.width) {
-          message = `Position ${flagMatch[1].toUpperCase()}${flagMatch[2]} is out of bounds. Valid range: A1-${String.fromCharCode(65 + config.width - 1)}${config.height}`;
-        } else {
-          success = game.toggleFlag({ row, col });
-          message = success
-            ? `Flag toggled at ${flagMatch[1].toUpperCase()}${flagMatch[2]}`
-            : `Cannot flag ${flagMatch[1].toUpperCase()}${flagMatch[2]} - cell may already be revealed`;
+        if (!item) {
+          return reply.code(404).send({
+            error: "Not found",
+            message: `Item with ID ${req.params.id} not found`,
+          });
         }
-      } else if (revealMatch) {
-        const col =
-          revealMatch[1].toUpperCase().charCodeAt(0) - "A".charCodeAt(0);
-        const row = parseInt(revealMatch[2], 10) - 1;
 
-        if (row < 0 || row >= config.height || col < 0 || col >= config.width) {
-          message = `Position ${revealMatch[1].toUpperCase()}${revealMatch[2]} is out of bounds. Valid range: A1-${String.fromCharCode(65 + config.width - 1)}${config.height}`;
-        } else {
-          success = game.revealCell({ row, col });
-          message = success
-            ? `Revealed ${revealMatch[1].toUpperCase()}${revealMatch[2]}`
-            : `Cannot reveal ${revealMatch[1].toUpperCase()}${revealMatch[2]} - cell may already be revealed or flagged`;
+        reply.send(item);
+      } catch (error: any) {
+        // Handle validation errors from Zod
+        if (error.name === "ZodError") {
+          return reply.code(400).send({
+            error: "Validation error",
+            details: error.errors.map((e: any) => e.message),
+          });
         }
-      } else {
-        message = `Invalid command "${input}". Valid commands: A1-${String.fromCharCode(65 + config.width - 1)}${config.height} to reveal, F A1-${String.fromCharCode(65 + config.width - 1)}${config.height} to flag, Q to quit`;
+
+        // Handle unexpected errors
+        reply.code(500).send({
+          error: "Internal server error",
+          message: "Failed to update item",
+        });
       }
-
-      // Get updated game state
-      gameState = game.getGameState();
-
-      reply.send({
-        board: renderBoardText(game.getConfig(), gameState),
-        message,
-        status: gameState.status,
-        gameState: {
-          id: req.params.id,
-          config: game.getConfig(),
-          status: gameState.status,
-          board: renderBoardText(game.getConfig(), gameState),
-          flags: gameState.grid
-            .flat()
-            .filter((cell) => cell.state === CellState.FLAGGED).length,
-          remainingCells: gameState.totalSafeCells - gameState.revealedCells,
-        },
-      });
-    },
+    }
   );
 
-  // Quit game endpoint
-  fastify.post<{ Params: { id: string } }>(
-    "/api/game/:id/quit",
+  /**
+   * DELETE /api/items/:id
+   * Delete an item by ID (admin only)
+   * Params: { id: string (UUID) }
+   * Requires admin key in X-Admin-Key or Authorization header
+   */
+  fastify.delete<{ Params: { id: string } }>(
+    "/api/items/:id",
     {
-      schema: routeSchemas.quitGame,
+      schema: routeSchemas.deleteItem,
+      preHandler: requireAdminKey, // Apply authorization middleware
     },
     async (
       req: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply,
+      reply: FastifyReply
     ) => {
-      const game = games[req.params.id];
-      if (!game) return reply.code(404).send({ error: "Game not found" });
+      const deleted = exampleService.delete(req.params.id);
 
-      const gameState = game.getGameState();
+      if (!deleted) {
+        return reply.code(404).send({
+          error: "Not found",
+          message: `Item with ID ${req.params.id} not found`,
+        });
+      }
 
       reply.send({
-        message: "Game ended by user",
-        gameState: {
-          id: req.params.id,
-          config: game.getConfig(),
-          status: "QUIT",
-          board: renderBoardText(game.getConfig(), gameState),
-          flags: gameState.grid
-            .flat()
-            .filter((cell) => cell.state === CellState.FLAGGED).length,
-          remainingCells: gameState.totalSafeCells - gameState.revealedCells,
-        },
+        success: true,
+        message: `Item ${req.params.id} deleted successfully`,
       });
-
-      // Remove the game from memory after quitting
-      delete games[req.params.id];
-    },
+    }
   );
 };
 

@@ -1,147 +1,164 @@
-// API Schemas
+import { z } from "zod";
 
-// Base position schema for row/column coordinates
-export const positionSchema = {
+/**
+ * API Schemas using Zod for validation
+ * These schemas define the structure and validation rules for API requests/responses
+ * They are also used to generate Swagger/OpenAPI documentation
+ */
+
+// ===========================
+// Zod Schemas for Validation
+// ===========================
+
+/**
+ * Schema for creating a new item
+ * Validates name (1-100 chars) and description (optional, max 500 chars)
+ */
+export const createItemSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Name is required")
+    .max(100, "Name must be 100 characters or less"),
+  description: z
+    .string()
+    .max(500, "Description must be 500 characters or less")
+    .optional()
+    .default(""),
+});
+
+/**
+ * Schema for updating an existing item
+ * All fields are optional (partial update)
+ */
+export const updateItemSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Name must not be empty")
+    .max(100, "Name must be 100 characters or less")
+    .optional(),
+  description: z
+    .string()
+    .max(500, "Description must be 500 characters or less")
+    .optional(),
+});
+
+/**
+ * Schema for item ID parameter (UUID format)
+ */
+export const itemIdParamSchema = z.object({
+  id: z.string().uuid("Invalid item ID format"),
+});
+
+// ===========================
+// Fastify Route Schemas (JSON Schema format for Swagger)
+// ===========================
+
+/**
+ * Convert Zod schemas to JSON Schema for Fastify/Swagger
+ * Note: In a production app, you might use @fastify/type-provider-zod
+ * for automatic conversion, but we're keeping it manual for clarity
+ */
+
+// JSON Schema for create item request
+const createItemJsonSchema = {
   type: "object",
-  required: ["row", "col"],
+  required: ["name"],
   properties: {
-    row: {
-      type: "number",
-      minimum: 0,
-      description: "Row coordinate (0-based)",
+    name: {
+      type: "string",
+      minLength: 1,
+      maxLength: 100,
+      description: "Item name",
     },
-    col: {
-      type: "number",
-      minimum: 0,
-      description: "Column coordinate (0-based)",
+    description: {
+      type: "string",
+      maxLength: 500,
+      description: "Item description (optional)",
     },
   },
 } as const;
 
-// Game configuration schema
-export const gameConfigSchema = {
+// JSON Schema for update item request
+const updateItemJsonSchema = {
   type: "object",
-  required: ["width", "height", "bombPercentage"],
   properties: {
-    width: {
-      type: "number",
-      minimum: 3,
-      maximum: 50,
-      description: "Board width (3-50)",
+    name: {
+      type: "string",
+      minLength: 1,
+      maxLength: 100,
+      description: "Item name",
     },
-    height: {
-      type: "number",
-      minimum: 3,
-      maximum: 50,
-      description: "Board height (3-50)",
-    },
-    bombPercentage: {
-      type: "number",
-      minimum: 1,
-      maximum: 99,
-      description: "Percentage of cells that contain bombs (1-99)",
+    description: {
+      type: "string",
+      maxLength: 500,
+      description: "Item description",
     },
   },
 } as const;
 
-// Game response schema
-export const gameResponseSchema = {
+// JSON Schema for item response
+const itemResponseSchema = {
   type: "object",
   properties: {
     id: {
       type: "string",
-      description: "Unique game identifier",
+      format: "uuid",
+      description: "Unique item identifier",
     },
-    config: {
-      ...gameConfigSchema,
-      description: "Game configuration",
-    },
-    status: {
+    name: {
       type: "string",
-      enum: ["playing", "won", "lost"],
-      description: "Current game status",
+      description: "Item name",
     },
-    board: {
+    description: {
       type: "string",
-      description: "ASCII representation of the game board",
+      description: "Item description",
     },
-    flags: {
-      type: "number",
-      description: "Number of flags placed",
+    createdAt: {
+      type: "string",
+      format: "date-time",
+      description: "Creation timestamp",
     },
-    remainingCells: {
-      type: "number",
-      description: "Number of cells remaining to reveal",
+    updatedAt: {
+      type: "string",
+      format: "date-time",
+      description: "Last update timestamp",
     },
   },
 } as const;
 
-// Error response schema
-export const errorResponseSchema = {
+// JSON Schema for error response
+const errorResponseSchema = {
   type: "object",
   properties: {
     error: {
       type: "string",
       description: "Error message",
     },
-  },
-} as const;
-
-// Validation error response schema
-export const validationErrorResponseSchema = {
-  type: "object",
-  properties: {
-    error: {
+    message: {
       type: "string",
-      description: "Error message",
+      description: "Detailed error message",
     },
     details: {
       type: "array",
       items: { type: "string" },
-      description: "Detailed validation errors",
+      description: "Validation error details",
     },
   },
 } as const;
 
-// Command schema
-export const commandSchema = {
-  type: "object",
-  required: ["command"],
-  properties: {
-    command: {
-      type: "string",
-      description: "Command to execute (e.g., 'reveal 3 4', 'flag 2 5')",
-      examples: ["reveal 3 4", "flag 2 5", "r 0 1", "f 1 2"],
-    },
-  },
-} as const;
-
-// Command response schema
-export const commandResponseSchema = {
-  type: "object",
-  properties: {
-    message: {
-      type: "string",
-      description: "Result message of the command execution",
-    },
-    gameState: {
-      ...gameResponseSchema,
-      description: "Updated game state after command execution",
-    },
-  },
-} as const;
-
-// Health check response schema
-export const healthResponseSchema = {
+// JSON Schema for health response
+const healthResponseSchema = {
   type: "object",
   properties: {
     status: {
       type: "string",
+      enum: ["ok", "error"],
       description: "Health status",
     },
     timestamp: {
       type: "string",
-      description: "Current timestamp in ISO format",
+      format: "date-time",
+      description: "Current timestamp",
     },
     uptime: {
       type: "number",
@@ -149,33 +166,42 @@ export const healthResponseSchema = {
     },
     version: {
       type: "string",
-      description: "Server version",
+      description: "API version",
     },
   },
 } as const;
 
-// Games list response schema (admin endpoint)
-export const gamesListResponseSchema = {
+// JSON Schema for items list response
+const itemsListResponseSchema = {
   type: "object",
   properties: {
-    ids: {
+    items: {
       type: "array",
-      items: { type: "string" },
-      description: "Array of active game IDs",
+      items: itemResponseSchema,
+      description: "Array of items",
     },
     total: {
       type: "number",
-      description: "Total number of active games",
-    },
-    message: {
-      type: "string",
-      description: "Status message",
+      description: "Total number of items",
     },
   },
 } as const;
 
-// Unauthorized response schema
-export const unauthorizedResponseSchema = {
+// JSON Schema for item ID parameter
+const itemIdParamJsonSchema = {
+  type: "object",
+  required: ["id"],
+  properties: {
+    id: {
+      type: "string",
+      format: "uuid",
+      description: "Item ID",
+    },
+  },
+} as const;
+
+// JSON Schema for unauthorized response
+const unauthorizedResponseSchema = {
   type: "object",
   properties: {
     error: {
@@ -189,22 +215,12 @@ export const unauthorizedResponseSchema = {
   },
 } as const;
 
-// Game ID parameter schema
-export const gameIdParamSchema = {
-  type: "object",
-  required: ["id"],
-  properties: {
-    id: {
-      type: "string",
-      description: "Game ID",
-      format: "uuid",
-    },
-  },
-} as const;
-
-// Fastify route schemas for all endpoints
+/**
+ * Fastify route schemas for all endpoints
+ * These are used by Fastify for validation and Swagger documentation
+ */
 export const routeSchemas = {
-  // Health endpoint
+  // Health check endpoint
   health: {
     operationId: "getHealth",
     tags: ["health"],
@@ -212,112 +228,81 @@ export const routeSchemas = {
     description: "Check server health and status",
     response: {
       200: healthResponseSchema,
+      500: errorResponseSchema,
     },
   },
 
-  // Create game endpoint
-  createGame: {
-    operationId: "createGame",
-    tags: ["game"],
-    summary: "Create new game",
-    description:
-      "Create a new Minesweeper game with specified dimensions and bomb percentage",
-    body: gameConfigSchema,
+  // Create item endpoint
+  createItem: {
+    operationId: "createItem",
+    tags: ["items"],
+    summary: "Create new item",
+    description: "Create a new item with name and optional description",
+    body: createItemJsonSchema,
     response: {
-      201: gameResponseSchema,
-      400: validationErrorResponseSchema,
-    },
-  },
-
-  // Get game state endpoint
-  getGameState: {
-    operationId: "getGameState",
-    tags: ["game"],
-    summary: "Get game state",
-    description: "Retrieve the current state of a specific game",
-    params: gameIdParamSchema,
-    response: {
-      200: gameResponseSchema,
-      404: errorResponseSchema,
-    },
-  },
-
-  // Reveal cell endpoint
-  revealCell: {
-    operationId: "revealCell",
-    tags: ["game"],
-    summary: "Reveal cell",
-    description: "Reveal a cell at the specified row and column position",
-    params: gameIdParamSchema,
-    body: positionSchema,
-    response: {
-      200: gameResponseSchema,
+      201: itemResponseSchema,
       400: errorResponseSchema,
-      404: errorResponseSchema,
     },
   },
 
-  // Flag cell endpoint
-  flagCell: {
-    operationId: "flagCell",
-    tags: ["game"],
-    summary: "Flag cell",
-    description: "Flag or unflag a cell at the specified position",
-    params: gameIdParamSchema,
-    body: positionSchema,
+  // Get item endpoint
+  getItem: {
+    operationId: "getItem",
+    tags: ["items"],
+    summary: "Get item by ID",
+    description: "Retrieve a specific item by its unique ID",
+    params: itemIdParamJsonSchema,
     response: {
-      200: gameResponseSchema,
-      400: errorResponseSchema,
+      200: itemResponseSchema,
       404: errorResponseSchema,
     },
   },
 
-  // List games endpoint (admin)
-  listGames: {
-    operationId: "listGames",
-    tags: ["admin"],
-    summary: "List all games",
-    description: "List all active game sessions (admin only)",
+  // List items endpoint (admin only)
+  listItems: {
+    operationId: "listItems",
+    tags: ["items", "admin"],
+    summary: "List all items",
+    description: "Retrieve all items (admin only)",
     security: [{ adminKey: [] }],
     response: {
-      200: gamesListResponseSchema,
+      200: itemsListResponseSchema,
       401: unauthorizedResponseSchema,
     },
   },
 
-  // Execute command endpoint
-  executeCommand: {
-    operationId: "executeCommand",
-    tags: ["game"],
-    summary: "Execute command",
-    description: "Execute text commands like 'reveal 3 4' or 'flag 2 5'",
-    params: gameIdParamSchema,
-    body: commandSchema,
+  // Update item endpoint
+  updateItem: {
+    operationId: "updateItem",
+    tags: ["items"],
+    summary: "Update item",
+    description: "Update an existing item's name and/or description",
+    params: itemIdParamJsonSchema,
+    body: updateItemJsonSchema,
     response: {
-      200: commandResponseSchema,
+      200: itemResponseSchema,
       400: errorResponseSchema,
       404: errorResponseSchema,
     },
   },
 
-  // Quit game endpoint
-  quitGame: {
-    operationId: "quitGame",
-    tags: ["game"],
-    summary: "Quit game",
-    description: "End the current game session gracefully",
-    params: gameIdParamSchema,
+  // Delete item endpoint (admin only)
+  deleteItem: {
+    operationId: "deleteItem",
+    tags: ["items", "admin"],
+    summary: "Delete item",
+    description: "Delete an item by ID (admin only)",
+    params: itemIdParamJsonSchema,
+    security: [{ adminKey: [] }],
     response: {
       200: {
         type: "object",
         properties: {
-          message: {
-            type: "string",
-            description: "Confirmation message",
-          },
-          gameState: gameResponseSchema,
+          success: { type: "boolean" },
+          message: { type: "string" },
         },
       },
+      401: unauthorizedResponseSchema,
       404: errorResponseSchema,
     },
   },

@@ -1,38 +1,42 @@
-// Core game types and interfaces for Minesweeper CLI
+/**
+ * Core types and interfaces for the API
+ * This file contains shared type definitions used across the application
+ */
 
-export interface GameConfig {
-  width: number;
-  height: number;
-  bombPercentage: number;
+// Generic API response wrapper
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
 }
 
-export interface Position {
-  row: number;
-  col: number;
+// Pagination parameters
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
 }
 
-export enum CellState {
-  HIDDEN = "HIDDEN",
-  REVEALED = "REVEALED",
-  FLAGGED = "FLAGGED",
+// Paginated response wrapper
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
-export interface Cell {
-  isBomb: boolean;
-  adjacentBombs: number;
-  state: CellState;
+// Health check response
+export interface HealthResponse {
+  status: "ok" | "error";
+  timestamp: string;
+  uptime: number;
+  version: string;
 }
 
-export enum GameStatus {
-  PLAYING = "PLAYING",
-  QUIT = "QUIT",
-  WON = "WON",
-  LOST = "LOST",
-}
-
-export interface GameState {
-  grid: Cell[][];
-  status: GameStatus;
-  revealedCells: number;
-  totalSafeCells: number;
+// Error response structure
+export interface ErrorResponse {
+  error: string;
+  message?: string;
+  details?: string[];
 }

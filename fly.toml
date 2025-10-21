@@ -1,5 +1,5 @@
-# fly.toml app configuration file for minesweeper-web
-app = "minesweeper-cli"
+# fly.toml app configuration file for fastify-api-boilerplate
+app = "fastify-api-boilerplate"
 primary_region = "sjc"
 
 [build]

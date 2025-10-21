@@ -1,444 +1,253 @@
-# Minesweeper CLI & Web
+# Fastify API Boilerplate
 
-A full-featured Minesweeper game with both command-line interface and web-based gameplay, built with Node.js and TypeScript. Features a clean HTML/JavaScript frontend for easy deployment and Model Context Protocol (MCP) integration for AI assistant interactions.
+A production-ready Fastify API boilerplate with TypeScript, comprehensive tooling, and Model Context Protocol (MCP) integration. This boilerplate provides a solid foundation for building modern APIs with excellent developer experience.
 
-## Features
+## 🚀 Features
 
-- **Dual Interface**: Play via command-line interface or web browser
-- **Arbitrary grid dimensions**: Configure width and height as desired
-- **Customizable bomb percentage**: Set the percentage of cells that contain bombs
-- **Intuitive coordinate system**: Use coordinates like "A1", "B5", etc.
-- **Visual board display**: Clean ASCII representation (CLI) or interactive web UI
-- **Flag functionality**: Mark suspected bomb locations
-- **REST API**: Full game API for custom integrations
-- **API Authorization**: Protected admin endpoints with admin key authentication
-- **Docker support**: Containerized deployment
-- **Simple frontend**: Pure HTML/CSS/JavaScript - no build process required
-- **MCP Integration**: Model Context Protocol support for AI assistant interactions
+- **[Fastify](https://fastify.dev)** - Fast and low overhead web framework
+- **TypeScript** - Type-safe development with excellent IDE support
+- **[Zod](https://zod.dev)** - Schema validation for request/response data
+- **[Swagger/OpenAPI](https://swagger.io/)** - Automatic API documentation generation
+- **Authorization Middleware** - Built-in admin key authentication
+- **[MCP Integration](https://modelcontextprotocol.io)** - Model Context Protocol support for AI assistants
+- **[Pino](https://getpino.io/)** - High-performance logging with pretty-printing
+- **Docker** - Containerized deployment ready
+- **Fly.io** - Production deployment configuration included
+- **Node Test Runner** - Built-in testing with Node's native test runner
 
-## Quick Start
+## 📋 Prerequisites
 
-### Web Server (Recommended)
+- Node.js >= 24.5.0
+- pnpm (recommended) or npm
 
-**Using Docker:**
+## 🛠️ Installation
+
 ```bash
-docker build -t minesweeper-web .
-docker run -p 8080:8080 --rm minesweeper-web
-```
-Then open http://localhost:8080 in your browser.
+# Clone the repository
+git clone <your-repo-url>
+cd minesweeper-cli
 
-**Local Development:**
-```bash
-pnpm install
-pnpm build
-pnpm start:server
-```
-
-### Command Line Interface
-
-**Using Docker:**
-```bash
-docker run -it --rm minesweeper-web node dist/index.js
-```
-
-**Local Development:**
-```bash
-pnpm install
-pnpm dev  # or pnpm build && pnpm start
-```
-
-## Installation
-
-1. Install dependencies:
-```bash
+# Install dependencies
 pnpm install
 ```
 
-2. Build the project:
+## 🏃 Running the Application
+
+### Development Mode
+
 ```bash
+# Start the server with hot-reload
+pnpm dev
+
+# Start with debug logging
+pnpm dev:debug
+
+# Start with watch mode
+pnpm dev:watch
+```
+
+The server will start at `http://localhost:8080` by default.
+
+### Production Mode
+
+```bash
+# Build the project
 pnpm build
+
+# Start the production server
+pnpm start
 ```
 
-### Why pnpm?
+## 🔑 Environment Variables
 
-This project uses **pnpm** instead of npm as the package manager for several advantages:
+Create a `.env` file in the root directory:
 
-- **Faster installations**: pnpm uses a content-addressable store, making installations significantly faster
-- **Disk space efficiency**: Shared dependencies across projects save disk space through hard linking
-- **Strict dependency resolution**: Prevents phantom dependencies and ensures reproducible builds
-- **Better monorepo support**: Superior handling of workspaces and linked packages
-- **Drop-in replacement**: Uses the same `package.json` format and most npm commands work identically
+```env
+# Server Configuration
+PORT=8080
+NODE_ENV=development
 
-To install pnpm: `npm install -g pnpm`
+# Admin Authentication
+ADMIN_KEY=your-secret-admin-key
 
-## Usage Modes
-
-### 🌐 Local Web & MCP Server Mode
-
-The web server provides both a web interface and REST API:
-
-**Development:**
-```bash
-pnpm dev:server:watch    # Auto-reload on changes
-pnpm dev:server          # Single run
-PORT=8081 pnpm dev:server # Custom port 8081
+# Logging
+LOG_LEVEL=info  # Options: trace, debug, info, warn, error, silent
 ```
 
-**Production:**
-```bash
-pnpm build
-pnpm start:server
-pnpm start:server # With custom port
-```
+## 📚 API Documentation
 
-**Web Endpoints:**
-- `GET /` - Game interface (play Minesweeper in browser)
-- `GET /mcp` - MCP integration documentation and setup
+Once the server is running, visit:
 
-**API Endpoints:**
-- `GET /api/health` - Health check
-- `POST /api/game` - Create new game
-- `GET /api/games` - List all active games (IDs only) - requires admin key
-- `GET /api/game/:id` - Get game state
-- `POST /api/game/:id/reveal` - Reveal cell
-- `POST /api/game/:id/flag` - Toggle flag
-- `POST /api/game/:id/quit` - Quit game session
-- `POST /api/game/:id/command` - CLI-style commands
+- **Swagger UI**: http://localhost:8080/documentation
+- **Health Check**: http://localhost:8080/api/health
+- **MCP Info**: http://localhost:8080/mcp
 
-**MCP Integration:**
-Model Context Protocol support allows AI assistants to play Minesweeper using natural language:
-- `GET /mcp/sse` - Server-Sent Events transport for MCP clients
-- `POST /mcp/messages` - Message handling for SSE transport
-- `GET /mcp/tools` - Debug endpoint listing available MCP tools
+## 🔌 MCP Integration
 
-**MCP Client Setup:**
-Visit `http://localhost:8080/mcp` for more detailed setup instructions.
+This boilerplate includes full support for the Model Context Protocol, allowing AI assistants (like Claude via Windsurf IDE) to interact with your API.
 
-**Quick MCP Test:**
-```bash
-# Verify MCP tools are available
-curl http://localhost:8080/mcp/tools
-```
+### Configuration for Windsurf IDE
 
-### 🖥️ CLI Mode
+Add this to your Windsurf MCP settings:
 
-Interactive command-line interface:
-
-**Development:**
-```bash
-pnpm dev                 # TypeScript with tsx
-pnpm dev:watch           # Auto-reload on changes
-```
-
-**Production:**
-```bash
-pnpm build
-pnpm start               # Runs the CLI game
-```
-
-### 🌐 Hosted Web & MCP Server Mode
-
-Use the hosted Minesweeper app without running your own instance:
-
-**Hosted URL:**
-```
-https://minesweeper.rest
-```
-
-**Hosted MCP Endpoint:**
-```
-https://minesweeper.rest/mcp/sse
-```
-
-**Windsurf IDE Configuration:**
 ```json
 {
   "mcpServers": {
-    "minesweeper": {
-      "serverUrl": "https://minesweeper.rest/mcp/sse"
+    "fastify-api-boilerplate": {
+      "serverUrl": "http://localhost:8080/mcp/sse"
     }
   }
 }
 ```
 
-**Available Tools:**
-All the same MCP tools are available on the hosted instance:
-- `createGame`, `getGameState`, `revealCell`, `flagCell`, `quitGame`, `executeCommand`, `getHealth`, `listGames`
+### Available MCP Tools
 
-**Benefits:**
-- ✅ No local setup required
-- ✅ Always up-to-date
-- ✅ High availability
-- ✅ Perfect for testing MCP integration
-
-## Game Configuration
-
-When you start the game, you'll be prompted to configure:
-
-1. **Grid Width**: Number of columns (3-50)
-2. **Grid Height**: Number of rows (3-50)
-3. **Bomb Percentage**: Percentage of cells containing bombs (5-40%)
-
-## Game Commands (CLI)
-
-- **Reveal cell**: Enter coordinates like `A1`, `B5`, `C10`
-- **Flag/Unflag cell**: Enter `F A1`, `F B5`, etc.
-- **Quit game**: Enter `Q` or `QUIT`
-
-## Coordinate System
-
-- **Columns**: Letters starting from A (A, B, C, ...)
-- **Rows**: Numbers starting from 1 (1, 2, 3, ...)
-- **Examples**: A1, B2, C3, Z26
-
-## Board Symbols
-
-- **F** **Flag**: Marked as potential bomb
-- **.** **Hidden**: Unrevealed cell
-- **(space)** **Empty**: Revealed cell with no adjacent bombs
-- **1-8**: Number of adjacent bombs
-- **\*** **Bomb**: Revealed bomb (game over)
-
-## Game Rules
-
-1. Click on cells to reveal them
-2. Numbers indicate how many bombs are adjacent (including diagonals)
-3. If you reveal a bomb, you lose
-4. If you reveal all non-bomb cells, you win
-5. Use flags to mark suspected bomb locations
-
-## Docker Usage
-
-### Web Server (Default)
-```bash
-# Build image
-docker build -t minesweeper-web .
-
-# Run web server on port 3000
-docker run -p 3000:3000 --rm minesweeper-web
-
-# Run with custom port
-docker run -p 8080:3000 --rm minesweeper-web
-
-# Run with environment variables
-docker run -p 3000:3000 --rm -e LOG_LEVEL=debug minesweeper-web
-```
-
-### CLI Mode
-```bash
-# Interactive CLI game
-docker run -it --rm minesweeper-web node dist/index.js
-
-# With debug logging
-docker run -it --rm -e LOG_LEVEL=debug minesweeper-web node dist/index.js
-```
-
-### Development with Docker
-```bash
-# Mount source code for development
-docker run -it --rm -v $(pwd):/app -w /app node:24-alpine sh
-# Then inside container:
-corepack enable && corepack prepare pnpm@latest --activate
-pnpm install
-pnpm dev:server
-```
-
-## API Usage
-
-### Create a Game
-```bash
-curl -X POST http://localhost:3000/api/game \
-  -H "Content-Type: application/json" \
-  -d '{"width": 10, "height": 10, "bombPercentage": 15}'
-```
-
-### Reveal a Cell
-```bash
-curl -X POST http://localhost:3000/api/game/{gameId}/reveal \
-  -H "Content-Type: application/json" \
-  -d '{"row": 0, "col": 0}'
-```
-
-### Toggle Flag
-```bash
-curl -X POST http://localhost:3000/api/game/{gameId}/flag \
-  -H "Content-Type: application/json" \
-  -d '{"row": 0, "col": 0}'
-```
-
-### CLI-style Command
-```bash
-curl -X POST http://localhost:3000/api/game/{gameId}/command \
-  -H "Content-Type: application/json" \
-  -d '{"command": "A1"}'
-```
-
-### Quit Game
-```bash
-curl -X POST http://localhost:3000/api/game/{gameId}/quit \
-  -H "Content-Type: application/json"
-```
-
-### List All Games (Protected)
-```bash
-# Requires admin key authentication
-curl -H "X-Admin-Key: minesweeper-admin-key" http://localhost:8080/api/games
-```
-
-> **Note**: The `/api/games` endpoint requires admin key authentication. Provide the admin key via the `X-Admin-Key` or `Authorization` header.
-
-## MCP (Model Context Protocol) Integration
-
-This server supports the Model Context Protocol, allowing AI assistants to interact with the Minesweeper game using natural language. All API endpoints are automatically exposed as MCP tools.
-
-### Demo
-
-![Minesweeper MCP Demo](./assets/sweeper.gif)
-
-*Watch an AI assistant play Minesweeper using natural language through MCP integration*
-
-### Quick Setup
-
-1. **Start the server**: `pnpm run dev:server`
-2. **Visit MCP page**: Open `http://localhost:8080/mcp` for setup instructions
-3. **Configure your AI client** with the SSE endpoint: `http://localhost:8080/mcp/sse`
-
-**Available MCP Tools:**
-- `createGame` - Create new Minesweeper game
-- `getGameState` - Get current game state
-- `revealCell` - Reveal a cell at specified coordinates
-- `flagCell` - Flag/unflag a cell
-- `quitGame` - End the current game session
-- `executeCommand` - Run text commands like "reveal 3 4"
+All API endpoints are automatically exposed as MCP tools:
 - `getHealth` - Check server health
-- `listGames` - List all games (admin only)
+- `createItem` - Create a new item
+- `getItem` - Get item by ID
+- `listItems` - List all items (admin only)
+- `updateItem` - Update an item
+- `deleteItem` - Delete an item (admin only)
 
-**Example AI Interactions:**
-- "Create a 10x10 minesweeper game with 20% bombs"
-- "Reveal the cell at row 5, column 3"
-- "Flag the cell at position (2, 7)"
-- "Show me the current game state"
-- "Quit the current game"
+## 🧪 Testing
 
-**Quick Verification:**
 ```bash
-# Check if MCP tools are available
-curl http://localhost:8080/mcp/tools
+# Run all tests
+pnpm test
+
+# Run tests in watch mode
+pnpm test:watch
+
+# Run tests in development mode (with tsx)
+pnpm test:dev
 ```
 
-For detailed setup instructions, client configuration examples, and troubleshooting, visit the **MCP Integration page** at `http://localhost:8080/mcp` or see [MCP.md](./MCP.md).
+## 🏗️ Project Structure
 
-## Example Game Flow (CLI)
-
-```
-⚙️  Game Configuration
-====================
-Enter grid width (e.g., 10): 8
-Enter grid height (e.g., 10): 8
-Enter bomb percentage (e.g., 15.5): 12.5
-
-🎯 Game started! Use coordinates like "A1" to reveal cells, or "F A1" to flag/unflag.
-📋 Commands: [coordinate] to reveal, F [coordinate] to flag, Q to quit
-
-====================================
-    A  B  C  D  E  F  G  H
- 1  .  .  .  .  .  .  .  .
- 2  .  .  .  .  .  .  .  .
- 3  .  .  .  .  .  .  .  .
- 4  .  .  .  .  .  .  .  .
- 5  .  .  .  .  .  .  .  .
- 6  .  .  .  .  .  .  .  .
- 7  .  .  .  .  .  .  .  .
- 8  .  .  .  .  .  .  .  .
-====================================
-
-Enter command: A1
-```
-
-## Development
-
-### Project Structure
 ```
 src/
-├── index.ts           # CLI entry point
-├── server.ts          # Web server entry point (includes inline web UI)
-├── cli.ts             # CLI interface and user interaction
-├── game.ts            # Core game logic
-├── serverBoardText.ts # Server-side board rendering
+├── server.ts          # Main server setup with Fastify plugins
+├── routes.ts          # API route definitions
+├── service.ts         # Business logic and data operations
+├── schemas.ts         # Zod schemas and Fastify route schemas
 ├── types.ts           # TypeScript type definitions
-└── logger.ts          # Logging configuration
+├── logger.ts          # Pino logger configuration
+└── static/            # Static files (images, etc.)
 
-data/                  # Game data storage (if needed)
+tests/
+└── server-auth.test.ts # Authorization middleware tests
+
+dist/                  # Compiled TypeScript output
 ```
 
-### Available Scripts
+## 📦 Building and Deployment
 
-**CLI Development:**
-- `pnpm dev`: Run CLI in development mode
-- `pnpm dev:watch`: Run CLI with auto-reload
-- `pnpm dev:debug`: Run CLI with debug logging
-- `pnpm start`: Run compiled CLI
+### Docker Build
 
-**Server Development:**
-- `pnpm dev:server`: Run server in development mode
-- `pnpm dev:server:watch`: Run server with auto-reload
-- `pnpm start:server`: Run compiled server
-
-**Build:**
-- `pnpm build`: Compile TypeScript to JavaScript
-- `pnpm clean`: Remove compiled files
-
-## Environment Variables
-
-- `LOG_LEVEL`: Set to `debug` or `trace` for verbose logging (default: `silent`)
-- `PORT`: Web server port (default: `8080`)
-- `ADMIN_KEY`: Admin key for protected endpoints (optional)
-- `NODE_ENV`: Environment mode (default: `production` in Docker)
-
-## Requirements Implemented
-
-- ✅ Grid of arbitrary dimensions
-- ✅ Configurable bomb percentage
-- ✅ Two bomb population modes (before/after first click)
-- ✅ Terminal-based interface with text coordinates (A1, B2, etc.)
-- ✅ Web-based interface with REST API
-- ✅ Bomb detection and game over logic
-- ✅ Adjacent bomb counting
-- ✅ Recursive reveal for empty cells (flood fill)
-- ✅ Flag functionality for marking suspected bombs
-- ✅ Docker containerization
-- ✅ Development and production modes
-- ✅ Inline HTML/JS frontend (no build process or separate files required)
-- ✅ Responsive web design with mobile support
-- ✅ Model Context Protocol (MCP) integration for AI assistant interactions
-
-## Troubleshooting
-
-### Port Already in Use
 ```bash
-# Check what's using port 3000
-lsof -i :8080
+# Build the Docker image
+docker build -t fastify-api-boilerplate .
 
-# Use a different port
-docker run -p 8081:8080 --rm minesweeper-web
+# Run the container
+docker run -p 8080:8080 --env-file .env fastify-api-boilerplate
 ```
 
-### Docker Build Issues
+### Fly.io Deployment
+
 ```bash
-# Clean build (no cache)
-docker build --no-cache -t minesweeper-web .
+# Login to Fly.io
+fly auth login
 
-# Check build logs
-docker build -t minesweeper-web . --progress=plain
+# Deploy the application
+fly deploy
+
+# Set environment variables
+fly secrets set ADMIN_KEY=your-secret-key
 ```
 
-### Frontend Issues
-The frontend is completely inline in the server code - no separate files or build process required. If you see a blank page:
-1. Check that the root route `/` is properly registered in the server
-2. Verify the API endpoints are responding (test `/api/health`)
-3. Check browser console for JavaScript errors
+The `fly.toml` configuration is already included and configured for production deployment.
 
-### Module Not Found Errors
-Make sure you run `pnpm install` and `pnpm build` before starting the application locally.
+## 🔐 Authorization
 
-Enjoy playing Minesweeper! 🎮💣
+Some endpoints require admin authentication. Include the admin key in your requests:
+
+```bash
+# Using X-Admin-Key header
+curl -H "X-Admin-Key: your-secret-key" http://localhost:8080/api/items
+
+# Using Authorization header
+curl -H "Authorization: your-secret-key" http://localhost:8080/api/items
+```
+
+## 📝 API Endpoints
+
+### Public Endpoints
+
+- `GET /` - Landing page
+- `GET /api/health` - Health check
+- `GET /mcp` - MCP integration information
+- `POST /api/items` - Create a new item
+- `GET /api/items/:id` - Get item by ID
+- `PUT /api/items/:id` - Update an item
+
+### Admin-Only Endpoints
+
+- `GET /api/items` - List all items
+- `DELETE /api/items/:id` - Delete an item
+
+## 🎨 Customization
+
+### Adding New Routes
+
+1. Define your schemas in `src/schemas.ts`
+2. Add route handlers in `src/routes.ts`
+3. Implement business logic in `src/service.ts` (or create new service files)
+4. Routes are automatically exposed as MCP tools when registered
+
+### Adding Authorization to Routes
+
+```typescript
+fastify.get(
+  "/api/protected",
+  {
+    preHandler: requireAdminKey, // Add this middleware
+  },
+  async (req, reply) => {
+    // Your handler code
+  }
+);
+```
+
+## 🔧 Available Scripts
+
+```json
+{
+  "build": "Build TypeScript and copy static files",
+  "clean": "Remove dist directory",
+  "dev": "Start development server",
+  "dev:debug": "Start with debug logging",
+  "dev:watch": "Start with watch mode",
+  "dev:watch:debug": "Start watch mode with debug logging",
+  "start": "Start production server",
+  "test": "Run all tests",
+  "test:watch": "Run tests in watch mode",
+  "test:dev": "Run tests with tsx"
+}
+```
+
+## 📄 License
+
+MIT
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📖 Additional Resources
+
+- [Fastify Documentation](https://fastify.dev)
+- [Zod Documentation](https://zod.dev)
+- [Model Context Protocol](https://modelcontextprotocol.io)
+- [Pino Logger](https://getpino.io/)
+- [Fly.io Documentation](https://fly.io/docs/)
