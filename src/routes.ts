@@ -4,7 +4,7 @@ import {
   FastifyRequest,
   FastifyReply,
 } from "fastify";
-import { ExampleService } from "./service";
+import { exampleService } from "./services";
 import { routeSchemas, createItemSchema, updateItemSchema } from "./schemas";
 import { readFileSync } from "fs";
 import { join } from "path";
@@ -42,9 +42,6 @@ const requireAdminKey = async (req: FastifyRequest, reply: FastifyReply) => {
  * Registers all API routes with the Fastify instance
  */
 const routesPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-  // Initialize the example service as a singleton
-  const exampleService = new ExampleService();
-
   // ===========================
   // Health Check Endpoint
   // ===========================
