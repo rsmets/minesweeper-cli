@@ -6,12 +6,25 @@ import swagger from "@fastify/swagger";
 import swaggerUI from "@fastify/swagger-ui";
 import cors from "@fastify/cors";
 import staticFiles from "@fastify/static";
+import { createExampleService } from "./services";
+import { ExampleService } from "./services/example.service";
 
 // Use require for the MCP plugin to work around module resolution issues
 const mcpPlugin = require("@mcp-it/fastify");
 
+// Extend FastifyInstance interface to include our decorated services
+declare module "fastify" {
+  interface FastifyInstance {
+    exampleService: ExampleService;
+  }
+}
+
 // Create Fastify instance with built-in logger
 const fastify = Fastify({ logger: true });
+
+// Register services as singletons using Fastify decorators
+// This approach provides better dependency injection and lifecycle management
+fastify.decorate("exampleService", createExampleService());
 
 // Read version from package.json
 const packageJson = JSON.parse(

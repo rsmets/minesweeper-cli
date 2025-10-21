@@ -4,7 +4,6 @@ import {
   FastifyRequest,
   FastifyReply,
 } from "fastify";
-import { exampleService } from "./services";
 import { routeSchemas, createItemSchema, updateItemSchema } from "./schemas";
 import { readFileSync } from "fs";
 import { join } from "path";
@@ -95,8 +94,8 @@ const routesPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
         // Validate request body using Zod schema
         const validatedData = createItemSchema.parse(req.body);
 
-        // Create the item using the service
-        const item = exampleService.create(validatedData);
+        // Create the item using the service (accessed via Fastify decorator)
+        const item = fastify.exampleService.create(validatedData);
 
         // Return 201 Created with the new item
         reply.code(201).send(item);
@@ -132,7 +131,7 @@ const routesPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       req: FastifyRequest<{ Params: { id: string } }>,
       reply: FastifyReply
     ) => {
-      const item = exampleService.get(req.params.id);
+      const item = fastify.exampleService.get(req.params.id);
 
       if (!item) {
         return reply.code(404).send({
@@ -157,7 +156,7 @@ const routesPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       preHandler: requireAdminKey, // Apply authorization middleware
     },
     async (req: FastifyRequest, reply: FastifyReply) => {
-      const items = exampleService.getAll();
+      const items = fastify.exampleService.getAll();
       reply.send({
         items,
         total: items.length,
@@ -190,8 +189,11 @@ const routesPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
         // Validate request body using Zod schema
         const validatedData = updateItemSchema.parse(req.body);
 
-        // Update the item using the service
-        const item = exampleService.update(req.params.id, validatedData);
+        // Update the item using the service (accessed via Fastify decorator)
+        const item = fastify.exampleService.update(
+          req.params.id,
+          validatedData
+        );
 
         if (!item) {
           return reply.code(404).send({
@@ -235,7 +237,7 @@ const routesPlugin: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       req: FastifyRequest<{ Params: { id: string } }>,
       reply: FastifyReply
     ) => {
-      const deleted = exampleService.delete(req.params.id);
+      const deleted = fastify.exampleService.delete(req.params.id);
 
       if (!deleted) {
         return reply.code(404).send({
