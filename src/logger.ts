@@ -22,6 +22,6 @@ export const logger = pino({
 });
 
 // Create child loggers for different components
-export const gameLogger = logger.child({ component: "game" });
-export const cliLogger = logger.child({ component: "cli" });
-export const mainLogger = logger.child({ component: "main" });
+export const exampleServiceLogger = logger.child({
+  component: "exampleService",
+});
