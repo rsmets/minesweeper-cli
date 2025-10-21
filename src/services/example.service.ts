@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { BaseService } from "./base.service";
+import { BaseService, BaseServiceInterface } from "./base.service";
 import { exampleServiceLogger } from "../logger";
 import {
   ExampleItem,
@@ -108,13 +108,5 @@ export class ExampleService
    */
   clear(): void {
     this.items.clear();
-  }
-
-  /**
-   * Static factory for creating a new ExampleService instance.
-   * Centralizes construction concerns and keeps a consistent creation API.
-   */
-  static create(): ExampleService {
-    return new ExampleService();
   }
 }

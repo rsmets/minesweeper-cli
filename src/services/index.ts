@@ -1,6 +1,6 @@
 import { ExampleService } from "./example.service";
 import { ExampleServiceInterface } from "./example.service.interface";
-export { BaseService } from "./base.service";
+export { BaseService, BaseServiceInterface } from "./base.service";
 
 /**
  * Service Factory Functions
@@ -13,7 +13,7 @@ export { BaseService } from "./base.service";
  * This function is called once when the service is first requested
  */
 export const createExampleService = (): ExampleService => {
-  return ExampleService.create();
+  return new ExampleService();
 };
 
 // Re-export service types and interfaces for type safety
