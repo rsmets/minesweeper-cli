@@ -1,4 +1,6 @@
 import { randomUUID } from "crypto";
+import { BaseService } from "./base.service";
+import { exampleServiceLogger } from "../logger";
 import {
   ExampleItem,
   CreateItemInput,
@@ -12,7 +14,14 @@ import {
  * Uses an in-memory store (Map) for simplicity
  * Implements ExampleServiceInterface for explicit contract compliance
  */
-export class ExampleService implements ExampleServiceInterface {
+export class ExampleService
+  extends BaseService
+  implements ExampleServiceInterface
+{
+  constructor() {
+    // Provide a dedicated child logger for this service instance
+    super(exampleServiceLogger);
+  }
   // In-memory data store: Map<id, ExampleItem>
   private items: Map<string, ExampleItem> = new Map();
 
@@ -99,5 +108,13 @@ export class ExampleService implements ExampleServiceInterface {
    */
   clear(): void {
     this.items.clear();
+  }
+
+  /**
+   * Static factory for creating a new ExampleService instance.
+   * Centralizes construction concerns and keeps a consistent creation API.
+   */
+  static create(): ExampleService {
+    return new ExampleService();
   }
 }
