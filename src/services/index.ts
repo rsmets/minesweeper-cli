@@ -1,4 +1,5 @@
 import { ExampleService } from "./example.service";
+import { ExampleServiceInterface } from "./example.service.interface";
 
 /**
  * Service Registry
@@ -64,5 +65,11 @@ const exampleService = registry.register(
 export { ServiceRegistry, registry };
 export { exampleService };
 
-// Re-export service types for type safety where needed
+// Re-export service types and interfaces for type safety
 export type { ExampleService } from "./example.service";
+export type {
+  ExampleServiceInterface,
+  ExampleItem,
+  CreateItemInput,
+  UpdateItemInput,
+} from "./example.service.interface";

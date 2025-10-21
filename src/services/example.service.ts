@@ -1,37 +1,18 @@
 import { randomUUID } from "crypto";
-
-/**
- * Example service demonstrating basic CRUD operations
- * This is a simple in-memory data store for demonstration purposes
- */
-
-// Simple data model for our example entity
-export interface ExampleItem {
-  id: string;
-  name: string;
-  description: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Input type for creating a new item
-export interface CreateItemInput {
-  name: string;
-  description: string;
-}
-
-// Input type for updating an existing item
-export interface UpdateItemInput {
-  name?: string;
-  description?: string;
-}
+import {
+  ExampleItem,
+  CreateItemInput,
+  UpdateItemInput,
+  ExampleServiceInterface,
+} from "./example.service.interface";
 
 /**
  * ExampleService class
  * Provides basic CRUD operations for example items
  * Uses an in-memory store (Map) for simplicity
+ * Implements ExampleServiceInterface for explicit contract compliance
  */
-export class ExampleService {
+export class ExampleService implements ExampleServiceInterface {
   // In-memory data store: Map<id, ExampleItem>
   private items: Map<string, ExampleItem> = new Map();
 
